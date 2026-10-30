@@ -4,7 +4,7 @@ How to charge customers a monthly fee per agent (around SGD 800), what that fee 
 
 Use the **[pricing calculator](../tools/pricing-calculator/index.html)** (open the file in a browser) to price a specific customer. All figures here come from that calculator's sample settings.
 
-> **Your costs in this doc are placeholders, not your real figures:** 3 hours a month per agent (1.5 support, 0.5 monitoring, 1 skill maintenance) at SGD 90 an hour, SGD 15 a month for the licensing service, and a setup day rate of SGD 1,500. Replace them with your own in the calculator before relying on any margin figure.
+> **Your costs in this doc are placeholders, not your real figures:** 3 hours a month per agent (1.5 support, 0.5 monitoring, 1 skill maintenance) at SGD 90 an hour, SGD 15 a month per agent as its share of hosting the licensing service in Azure (explained in section 4), and a setup day rate of SGD 1,500. Replace them with your own in the calculator before relying on any margin figure.
 >
 > Figures are planning estimates in SGD, excluding GST (9%). Microsoft rates were checked against [Copilot Studio billing rates](https://learn.microsoft.com/microsoft-copilot-studio/requirements-messages-management) in October 2026. Confirm current rates and your own costs before quoting. This isn't legal or tax advice.
 
@@ -70,7 +70,7 @@ flowchart LR
 | **Customer pays in total** | **SGD 1,205** |
 | Value: 10 minutes saved per hold × 300 × SGD 55/hour | **SGD 2,750** (2.3× the monthly cost) |
 | Setup SGD 9,000 paid back in | **5.8 months** |
-| Your cost: 3 hours × SGD 90 + SGD 15 licensing service | SGD 285 |
+| Your cost: 3 hours × SGD 90 + SGD 15 licensing service hosting (see below) | SGD 285 |
 | **Your margin** | **SGD 515 (64%)** |
 
 **Lesson:** the scheduled check every 30 minutes uses about 7,500 credits a month, even when there are no new holds. Triggering the agent from a D365 business event instead cuts the customer's Microsoft bill from SGD 405 to SGD 308.
@@ -90,6 +90,14 @@ At 1,500 holds a month, the calculator moves the customer to **Plus** (SGD 1,400
 | **Your margin** | **SGD 765 (73%)** |
 
 **Lesson:** this agent's Microsoft cost is small, so almost all of the customer's spend is your fee. Its value is mostly in a faster, controlled close, which the hours-saved figure understates. In the proposal, add the business value the controller cares about: days off the close, fewer adjustments after close, and audit evidence.
+
+### What "licensing service hosting" means in your cost
+
+The [licensing service](../licensing-service/README.md) is the small Azure service **you** run. It checks each customer's licence and sends the agent its skills. You pay Azure for it every month (Function App, API Management, storage and monitoring), however many customers you have, so each agent you sell carries a share of that bill:
+
+> Licensing service hosting per agent = your monthly Azure bill for the licensing service ÷ number of live agent subscriptions
+
+Example: an Azure bill of S$30 a month and 10 live agents means S$3 per agent per month. The S$15 used in this doc is a generous placeholder. At small scale the Azure bill is usually a few dollars to a few tens of dollars a month; read the real figure in **Azure portal → Cost Management** for the licensing service's resource group. It's your cost only: customers never see it, and it isn't part of their Microsoft bill.
 
 ## 5. How the customer's Microsoft cost is estimated
 

@@ -234,13 +234,14 @@ footer a { color: var(--accent); }
 
       <fieldset class="vendor-only">
         <legend>Your cost per agent per month</legend>
-        <p class="hint"><strong>Placeholders, not your figures.</strong> Replace them with your own: the hours you actually spend per agent each month, your loaded cost per hour (salary + overheads, or a contractor's rate), and your Azure bill for the licensing service divided by the number of agents.</p>
+        <p class="hint"><strong>Placeholders, not your figures.</strong> Replace them with your own: the hours you actually spend per agent each month, your loaded cost per hour (salary + overheads, or a contractor's rate), and your licensing service hosting.</p>
+        <p class="hint"><strong>Licensing service hosting</strong> is your share of running the licensing service: the small Azure service you host that checks each customer's licence and sends the agent its skills. Take your monthly Azure bill for it and divide by the number of live agents you sell (S$30 a month across 10 agents = S$3 each). The S$15 default is a generous placeholder. Customers never see this cost.</p>
         <div class="grid2">
           <label class="f">Support hours<input type="number" id="vh1" data-path="vendor.supportHours" min="0" step="0.5"></label>
           <label class="f">Monitoring &amp; report hours<input type="number" id="vh2" data-path="vendor.monitoringHours" min="0" step="0.5"></label>
           <label class="f">Skill maintenance hours<input type="number" id="vh3" data-path="vendor.maintenanceHours" min="0" step="0.5"></label>
           <label class="f">Internal cost per hour <span class="u">SGD</span><input type="number" id="vhr" data-path="vendor.hourlyCostSgd" min="0"></label>
-          <label class="f">Licensing service share <span class="u">SGD</span><input type="number" id="az" data-path="vendor.azureShareSgd" min="0"></label>
+          <label class="f">Licensing service hosting <span class="u">SGD per agent, your Azure bill ÷ agents</span><input type="number" id="az" data-path="vendor.azureShareSgd" min="0"></label>
           <label class="f">Marketplace / channel fee <span class="u">%</span><input type="number" id="ch" data-path="vendor.channelFeePct" min="0" max="50" step="0.5"></label>
           <label class="f">Customers on this agent<input type="number" id="cust" data-path="customersOnAgent" min="0" step="1"></label>
         </div>
@@ -435,7 +436,7 @@ footer a { color: var(--accent); }
     if (view === 'vendor') {
       rows.push(['group', 'Your cost (internal)']);
       rows.push(['', dec1.format(v.hours) + ' hours × ' + sgd.format(state.vendor.hourlyCostSgd), sgd.format(v.hours * state.vendor.hourlyCostSgd)]);
-      rows.push(['', 'Licensing service share', sgd.format(state.vendor.azureShareSgd)]);
+      rows.push(['', 'Licensing service hosting (your Azure bill ÷ agents)', sgd.format(state.vendor.azureShareSgd)]);
       if (state.vendor.channelFeePct) rows.push(['', 'Channel fee ' + state.vendor.channelFeePct + '%', sgd.format(sub.monthlySgd * state.vendor.channelFeePct / 100)]);
       rows.push(['total', 'Margin', sgd.format(v.marginSgd)]);
     }
