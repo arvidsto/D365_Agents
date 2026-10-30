@@ -11,7 +11,7 @@ Use the **Dataverse MCP** `read_query` tool only. Never answer from memory.
 `SELECT TOP 5 ica_closerunid, ica_name, ica_company, ica_periodenddate, ica_locked FROM ica_closerun WHERE ica_company = '<company>' AND ica_status = 'Active'` and match the period to `ica_periodenddate`.
 
 ## Path P — checklist plan (informational or broad run)
-Return every task of the run ordered by `ica_sequence` with: name, sequence, status, agent enabled, `#autostart` present (case-insensitive standalone tag in the original name), owner, due date, blocked flag and reason, dependencies complete (all lower-sequence tasks in `ica_dependson` are Complete).
+One `read_query` with explicit columns, never `SELECT *`. For a chain run, only tasks that are not Complete. Return them ordered by `ica_sequence` with: name, sequence, status, agent enabled, `#autostart` present (case-insensitive standalone tag in the original name), owner, due date, blocked flag and reason, dependencies complete (all lower-sequence tasks in `ica_dependson` are Complete).
 
 For informational questions, present a table: Seq · Task · Status · Owner · Due · Agent enabled. No writes, no emails.
 
@@ -22,5 +22,5 @@ Match the **exact** task name the user gave (trim spaces; case-insensitive; `#au
 - 2 rows: say the name is ambiguous and list both with sequence numbers. Do not pick.
 
 ## Rules
-- Results are a live snapshot. Re-read before every gate check; never reuse a read from earlier in the conversation for a write decision.
+- Results are a live snapshot for answering and planning. Write decisions are re-checked server-side by *ICA - Start task*, so never re-read just to check gates, and never reuse a read from earlier in the conversation to tell a user a status.
 - Provide a deep link to the checklist record in the review app for each task you list.

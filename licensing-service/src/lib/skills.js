@@ -23,6 +23,8 @@ export async function loadCatalogue(skillsDir = DEFAULT_SKILLS_DIR) {
         name,
         version: entry.version,
         description: frontMatter.description || '',
+        // Exact task-name phrase, so a flow can route a task to one skill without asking the model.
+        routing: frontMatter.routing || '',
         settings: findSettings(raw),
         raw,
         body

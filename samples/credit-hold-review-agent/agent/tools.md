@@ -9,7 +9,8 @@ The orchestrator picks tools by **name + description + input descriptions**. Cop
 | Setting | Value |
 | --- | --- |
 | Connection | Service account with role *Credit Hold Agent* for scheduled runs; end-user authentication for chat (create two agents or two connections if your governance requires strict separation) |
-| Tools enabled (release 1) | Data tools for **read** only (find / describe / read entities); form tools **off** |
+| Tools enabled (release 1) | Data tools for **read** only (find / describe / read entities); form tools **off**. Used **in chat only**: the autonomous path reads F&O through flows |
+| Output discipline | Ask only for the fields you need (`$select`), filter on the server, at most 20 rows. Never fetch full records |
 | Tools enabled (Option B, later) | Add the custom **action tool** that releases one hold with a reason code |
 | Entities the agent typically uses | Customers (credit limit, credit limit expiry, payment terms), sales order headers and lines (amount, status), customer transactions / open transactions (overdue, aging, last payment), credit management hold list |
 
@@ -25,20 +26,14 @@ The orchestrator picks tools by **name + description + input descriptions**. Cop
 
 ## 2. Agent flows
 
-### CHR - Register hold
-
-| | |
-| --- | --- |
-| **Description** | Registers ONE sales order credit hold as a review item in Dataverse. Idempotent: if the same company + sales order already has an open review item, returns it with isNew = false. Call this before reviewing any hold. |
-| **Inputs** | `salesOrderNumber` (text) — Sales order number exactly as in D365, e.g. 000812. `companyCode` (text) — legal entity, e.g. USMF. `customerAccount` (text) — e.g. US-003. `blockingReason` (text) — reason text from the hold list. `orderAmount` (number) — order total in company currency. |
-| **Outputs** | `reviewId` (GUID), `isNew` (yes/no), `status` (text) |
+> **Cost rule:** the agent is only started once a hold is already registered, so it never polls. Every agent action costs credits; every agent flow action costs about 1/40 of one (0.13 credits). Fact gathering and registration therefore run inside flows, not as agent tool calls.
 
 ### CHR - Build credit case
 
 | | |
 | --- | --- |
-| **Description** | Builds the credit case file for ONE review item from the ERP and CRM facts you gathered, applies the credit policy using an AI prompt, saves the recommendation, and tells you where to route it. Pass null for any fact you could not find; never estimate. |
-| **Inputs** | `reviewId` (GUID of the review item, no "ID:" prefix). `factsJson` (text) — JSON object with: creditLimit, balance, overdueAmount, oldestOverdueDays, orderAmount, lastPaymentDate, creditLimitExpiryDate, paymentTerms, forcedHold, isIntercompany, currency, crm: {accountOwner, openOpportunityValue, openDisputeCases}. |
+| **Description** | Builds the credit case file for ONE review item: gathers the ERP and CRM facts itself (child flow *CHR - Gather credit facts*, only the needed fields), applies the credit policy using an AI prompt, saves the recommendation, and tells you where to route it. Call it once per review. |
+| **Inputs** | `reviewId` (GUID of the review item, no "ID:" prefix) |
 | **Outputs** | `recommendation` (Release / KeepOnHold / Review), `reasons` (text), `confidence` (High / Medium / Low), `routeTo` (Approval / ManualReview) |
 
 ### CHR - Request approval
@@ -84,6 +79,7 @@ The licensing service also offers an MCP endpoint, but this agent uses the flow 
 
 | Trigger | Payload | Purpose |
 | --- | --- | --- |
-| Recurrence (every 30 min, business hours) | `Check for new credit holds in company USMF` | Autonomous discovery |
-| Dataverse — row modified on `chr_creditholdreview`, filter `chr_status` | `Continue review {reviewId}` | Continue after human decision |
-| Optional: F&O alert as business event on the credit hold list | `Check for new credit holds in company {company}` | Near-real-time instead of polling |
+| Dataverse — row added on `chr_creditholdreview` (status New) | `Review hold {reviewId}` | Start one review. The row is created by the scheduled flow below |
+| Dataverse — row modified on `chr_creditholdreview`, filter `chr_status` = Approved or Rejected | `Continue review {reviewId}` | Continue after the human decision |
+
+**Not an agent trigger:** *CHR - Check for new holds* is a scheduled cloud flow (every 30 minutes in business hours only, set in its recurrence schedule). It reads the hold list, registers new holds and closes verified releases **without starting the agent**, so a check that finds nothing costs only a few flow actions. To react faster, add an F&O alert as business event on the credit hold list that starts the same flow.

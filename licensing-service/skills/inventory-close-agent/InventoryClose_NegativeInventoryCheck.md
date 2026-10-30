@@ -1,6 +1,7 @@
 ---
 name: InventoryClose_NegativeInventoryCheck
 description: Read-only check for items with negative physical or financial on-hand inventory at the period end, which can stop inventory close or distort cost. Matches task names containing "negative inventory". ReadOnly.
+routing: negative inventory
 ---
 
 # Negative inventory check
@@ -19,6 +20,7 @@ Finds items whose physical or financial on-hand is negative for the financial in
 Task **Name** must contain `negative inventory`. Area = Inventory corroborates only. Exclude: tasks that ask to adjust or count inventory.
 
 ## Required data source
+- **Read only what the procedure needs:** select only the fields named in this skill, filter on the server (company, dates, status), and ask for at most the rows you will report (top 50). Never read full records or whole tables; every extra field is paid for in tokens at every later step.
 - Dynamics 365 ERP MCP data tools on the on-hand inventory entity (by item and the financial dimensions from the item's storage dimension group, typically site and warehouse). Confirm entity and fields from metadata.
 
 ## Scope

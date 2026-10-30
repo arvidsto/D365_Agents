@@ -1,17 +1,44 @@
 # Agent flows — specification
 
-All flows live in the solution, start with **When an agent calls the flow** (except *Log & notify* and *Load licensed skill (child)*, which are child flows), and end with **Respond to the agent**. Use connection references, never personal connections.
+Agent flows called by the agent start with **When an agent calls the flow** and end with **Respond to the agent**. Child flows (*Register hold*, *Gather credit facts*, *Load licensed skill (child)*, *Log & notify*) start with **Manually trigger a flow**. *Check for new holds* runs on a schedule and never wakes the agent unless there's new work. Use connection references, never personal connections.
 
-Connection references: `chr_Dataverse`, `chr_Office365Outlook`, `chr_Teams`, `chr_FinOps` (Option B only), `chr_AIPrompt` (AI Builder / prompts), `chr_LicensedSkills` (the [licensing service](../../../licensing-service/README.md) connector).
+Connection references: `chr_Dataverse`, `chr_Office365Outlook`, `chr_Teams`, `chr_FinOps` (reads; the release action only in Option B), `chr_AIPrompt` (AI Builder / prompts), `chr_LicensedSkills` (the [licensing service](../../../licensing-service/README.md) connector).
 
 ---
 
-## CHR - Register hold
+## CHR - Check for new holds (scheduled)
+
+**Purpose:** find new holds and close released ones **without waking the agent**. An idle check costs about 15 flow actions (about 2 credits) instead of an agent run (about 17 credits). The agent only starts when there is a new hold to review.
+
+```text
+Trigger: Recurrence, frequency Week, on Mon–Fri, at hours 8–18, at minutes 0 and 30
+         (22 runs per working day, none at night or at weekends: set the
+         customer's hours in the trigger's schedule and time zone)
+         (or, where available, an F&O alert-as-business-event on the credit hold list)
+
+1. Licensed Skills · GetLicenceStatus (agentId = credit-hold-review-agent)
+   licensed == false → stop (no registration; the next run retries)
+2. For each company in chr_CompanyCodes:
+   a. Fin & Ops · List items: credit management hold list entity, open holds only
+        $select = SalesOrderNumber, CustomerAccount, BlockingReason, OrderAmount
+        $filter = status open; $top = 200
+   b. Dataverse · List rows chr_creditholdreview where company = <company>
+        and status ne Closed  ($select = salesordernumber, status, id)
+   c. New holds = (a) minus (b)  →  Run child flow CHR - Register hold for each
+        (each new row starts the agent through its Dataverse trigger)
+   d. Released holds = reviews in (b) with status ReleasePending that are no
+      longer in (a)  →  Run child flow CHR - Apply decision (verifiedReleased = true)
+3. Done. No agent call, no AI tokens.
+```
+
+Confirm the hold list entity and field names in your F&O version (Data management → Data entities). If the hold list isn't exposed as an entity, expose it with a small custom entity: this check runs hundreds of times a month, so it must stay cheap.
+
+## CHR - Register hold (child)
 
 **Purpose:** create one work item per hold, safely (idempotent).
 
 ```text
-Trigger: When an agent calls the flow
+Trigger: Manually trigger a flow (child)
   inputs: salesOrderNumber, companyCode, customerAccount, blockingReason, orderAmount
 
 1. Dataverse · List rows  chr_creditholdreview
@@ -20,18 +47,47 @@ Trigger: When an agent calls the flow
              and chr_status ne 'Closed'
      top: 1
 2. Condition: length(rows) > 0
-   Yes → Respond: reviewId = rows[0].id, isNew = false, status = rows[0].chr_status
+   Yes → Respond: reviewId = rows[0].id, isNew = false
    No  →
      3. Dataverse · Add a row  chr_creditholdreview
-          name           = '{companyCode}-{salesOrderNumber}'
-          status         = New
-          salesordernumber, companycode, customeraccount, blockingreason, orderamount
-          detectedon     = utcNow()
+          name = '{companyCode}-{salesOrderNumber}', status = New,
+          salesordernumber, companycode, customeraccount, blockingreason, orderamount,
+          detectedon = utcNow()
      4. Run child flow  CHR - Log & notify  (action = Registered)
-     5. Respond: reviewId = new id, isNew = true, status = New
+     5. Respond: reviewId = new id, isNew = true
 ```
 
-**Why idempotent?** The recurrence trigger runs every 30 minutes and will see the same hold many times. The key (company + sales order + not closed) prevents duplicates — a production must-have from the [checklist](../../../docs/02-solution-approach.md#checklist-is-my-agent-production-ready).
+**Why idempotent?** The check runs every 30 minutes and sees the same hold many times. The key (company + sales order + not closed) prevents duplicates, a must-have from the [checklist](../../../docs/02-solution-approach.md#checklist-is-my-agent-production-ready).
+
+---
+
+## CHR - Gather credit facts (child)
+
+**Purpose:** collect every fact the policy needs in **one** deterministic call, instead of the agent making 8 separate MCP calls (5 credits each). Returns compact JSON in the facts schema.
+
+```text
+Trigger: Manually trigger a flow (child)   input: reviewId
+
+1. Dataverse · Get row chr_creditholdreview ($select = company, salesorder, customeraccount, orderamount, blockingreason)
+2. Fin & Ops · Get record, customer entity
+     $select = CreditLimit, CreditLimitExpiryDate, PaymentTerms, IsIntercompany (confirm field names)
+3. Fin & Ops · List items, customer open transactions
+     $select = DueDate, AmountOpen, LastPaymentDate; $filter = customer + company + open
+   Compose balance, overdueAmount, oldestOverdueDays (today − oldest open due date),
+   lastPaymentDate
+4. Fin & Ops · Get record, sales order header ($select = forced hold flag)
+5. If chr_UseCrmContext = Yes:
+     Dataverse · List rows account where accountnumber = customeraccount
+       ($select = ownerid; $top = 1)
+     Dataverse · List rows opportunity (open, that account; $select = estimatedvalue)
+     Dataverse · List rows incident (open, that account, type dispute or complaint; count only)
+6. Respond: factsJson = { currency, creditLimit, balance, overdueAmount, oldestOverdueDays,
+     orderAmount, lastPaymentDate, creditLimitExpiryDate, paymentTerms, forcedHold,
+     isIntercompany, crm: { accountOwner, openOpportunityValue, openDisputeCases } }
+     Use null for anything not found. Never estimate.
+```
+
+Every read uses `$select` and a filter, so only a few hundred bytes reach the prompt.
 
 ---
 
@@ -41,9 +97,10 @@ Trigger: When an agent calls the flow
 
 ```text
 Trigger: When an agent calls the flow
-  inputs: reviewId, factsJson
+  input: reviewId
 
 1. Dataverse · Get a row by ID  chr_creditholdreview (reviewId)
+1a. Run child flow CHR - Gather credit facts (reviewId) → factsJson
 2. Get environment variables: chr_AlwaysHumanOrderAmount
 2a. Run child flow  CHR - Load licensed skill (child)
      skillName = CHR_CreditRecommendationPrompt
@@ -168,7 +225,8 @@ The status update in step 6 fires the Dataverse trigger → the agent receives `
 ## CHR - Apply decision
 
 ```text
-Trigger: When an agent calls the flow   inputs: reviewId, verifiedReleased
+Trigger: When an agent calls the flow (also run as a child by Check for new holds)
+  inputs: reviewId, verifiedReleased
 
 1. Dataverse · Get a row by ID
 2. Switch status
@@ -187,7 +245,7 @@ Trigger: When an agent calls the flow   inputs: reviewId, verifiedReleased
            Fin & Ops · Get record (sales order) → verify not on hold
            update status = Released / Failed
            Log & notify
-   ReleasePending and verifiedReleased == true →
+   ReleasePending and verifiedReleased == true (called by Check for new holds) →
        update status = Closed, outcome = Released
        Log & notify (action = ClosedReleased)
    other → no-op

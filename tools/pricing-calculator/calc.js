@@ -24,9 +24,11 @@
       label: 'Credit Hold Review Agent',
       itemLabel: 'credit holds reviewed',
       itemsPerMonth: 300, legalEntities: 1,
-      perItem: { agentActions: 14, generativeAnswers: 1, flowActions: 120, promptKTokens: 3, promptTier: 'standard' },
+      // Flows gather the facts and a scheduled flow finds new holds, so the agent only
+      // runs Build case, Request approval and Apply decision (plus two session starts).
+      perItem: { agentActions: 6, generativeAnswers: 0, flowActions: 180, promptKTokens: 3, promptTier: 'standard' },
       model: { type: 'standard', kTokensPerAction: 2 },
-      scheduled: { runsPerMonth: 440, agentActionsPerRun: 3, flowActionsPerRun: 15 },
+      scheduled: { runsPerMonth: 440, agentActionsPerRun: 0, flowActionsPerRun: 15 },
       chat: { sessionsPerMonth: 40, agentActionsPerSession: 4, generativeAnswersPerSession: 3, usersHaveM365Copilot: false },
       value: { minutesSavedPerItem: 10, staffCostPerHourSgd: 55 }
     },
@@ -34,11 +36,14 @@
       label: 'Inventory Close Agent',
       itemLabel: 'close tasks run',
       itemsPerMonth: 16, legalEntities: 2,
-      perItem: { agentActions: 20, generativeAnswers: 1, flowActions: 60, promptKTokens: 0, promptTier: 'standard' },
+      // Start task and Finish task flows do the gates, routing, claim and audit, so the agent
+      // spends about 12 steps per task (2 flows, ~7 ERP reads, notification, report).
+      perItem: { agentActions: 12, generativeAnswers: 1, flowActions: 90, promptKTokens: 0, promptTier: 'standard' },
       // Runs on the Microsoft Copilot harness, which bills model tokens, tools and the harness.
-      // Approximated as token-based; measure it before quoting.
-      model: { type: 'harness', kTokensPerAction: 2 },
-      scheduled: { runsPerMonth: 22, agentActionsPerRun: 6, flowActionsPerRun: 10 },
+      // Approximated as token-based (1.5K per step after trimming instructions and tool output);
+      // measure it before quoting.
+      model: { type: 'harness', kTokensPerAction: 1.5 },
+      scheduled: { runsPerMonth: 22, agentActionsPerRun: 4, flowActionsPerRun: 15 },
       chat: { sessionsPerMonth: 30, agentActionsPerSession: 5, generativeAnswersPerSession: 3, usersHaveM365Copilot: false },
       value: { minutesSavedPerItem: 120, staffCostPerHourSgd: 70 }
     }

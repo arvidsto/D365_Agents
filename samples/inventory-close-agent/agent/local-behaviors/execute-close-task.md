@@ -1,57 +1,42 @@
 ---
 name: execute-close-task
-description: Executes exactly one live, agent-enabled checklist task. Applies all gates, marks the task started through the audited flow, routes to exactly one InventoryClose_* business skill, applies the outcome, marks it completed or hands off, and records the audit exactly once.
+description: Executes exactly one live, agent-enabled checklist task in three tool calls around the business procedure - ICA - Start task (fresh read, gates, routing, skill, claim), the procedure from the returned skill, and ICA - Finish task (status and audit).
 ---
 
 # Execute one close task
 
-Requires an established close context.
+Requires an established close context and the exact task ID (from retrieve-close-checklist Path T, the trigger payload, or run-close-chain).
 
-## Step 1 — Pre-flight gates (fresh read via retrieve-close-checklist Path T or Path P row)
+## Step 1 — Start
+Call **ICA - Start task** with `taskId`, `triggerSource` and `chainRun`.
+The flow does every gate, the routing and the claim server-side, in this order: locked run, status, blocked, Agent enabled, dependencies, due date (chain runs only), licence, routing to exactly one skill, settings, claim. Never repeat these checks with your own reads.
 
-Check in this order; the first failing gate stops the task and goes to Step 6 with outcome **Skipped** or **Blocked**.
-
-| Gate | Pass condition | Fail message |
-|---|---|---|
-| Run not locked | `ica_locked = No` | "close run is locked" |
-| Exactly one row | Path T returned one row | "ambiguous or missing task" |
-| Status | Not started or Returned. Exception: the exact task in a **HumanStart** trigger may be In progress | "in progress / in review — pending human" |
-| Not blocked | `ica_blocked = No` and blocked reason empty | "blocked — not executed: <reason>" |
-| Agent enabled | `ica_agentenabled = Yes` | "manual task — not agent-enabled" |
-| Dependencies | Every task in `ica_dependson` is Complete | "waiting for <task names>" |
-| Due (chain runs only) | Due date ≤ today + `ica_LeadDays`. Human chat requests bypass this gate. | "not yet due" |
-
-## Step 2 — Route to exactly one licensed business skill
-This step happens **before** any status change, so a licence problem never leaves a task half started.
-1. Call **ICA - Load licensed skill** with an empty `skillName` to get the catalogue. If `licensed = false`: record **Blocked** with code `LicenceExpired` (state `unavailable` → `LicenceUnavailable`), send `ManualHandoff` to the owner, and stop.
-2. Consider only skills in the catalogue whose name starts with `InventoryClose_` and whose description says they match task names. A match needs the task name to contain the routing phrase quoted in the description. Area only corroborates.
-3. Exactly one match → continue. Zero → send the owner a navigation handoff (send-close-notification, type `NoProcedure`) and record **Skipped**. Several → stop, record **Blocked** with code `AmbiguousRouting`.
-4. Call **ICA - Load licensed skill** with the exact name.
-   - `licensed = false` → same as 1.
-   - `state = setting-missing` → record **Blocked** `SettingMissing` with the names in `missingSettings`, send `BlockedHandoff` to the close owner ("ask your administrator to set …"), and stop.
-   - Confirm the returned skill's **Routing contract** section agrees with the match; if not, record **Blocked** `AmbiguousRouting`.
-5. Freeze the skill's name, **version**, **source** (`live` or `cache`), `postingPolicy` and `defaultExecutionMode` for this attempt. Keep any notice for the report; when `source = cache`, always show it.
-
-## Step 3 — Mark started
-Call **ICA - Mark task started** with `taskId`, `attemptKey` (= `<taskId>-<UTC yyyyMMddHHmm>`), `triggerSource`. Skip only for the exact HumanStart row (already In progress).
-- `verified = true` → continue.
-- `alreadyClaimed = true` → stop silently (another run owns it); no audit row.
-- Anything else → Step 6 **Failed**, stage `MarkStarted`.
-
-## Step 4 — Run the procedure
-Follow the business skill. It returns exactly one outcome: ✅ success, ⚠️ needs attention, 🛑 blocked, plus a report table.
-- If the skill is `Batch` mode it returns ⏳ **submitted** with a batch job ID. Do not wait. Go to Step 6 with outcome **Submitted**; the batch completion watcher will finish the task.
-- A skill never writes task status. If it asks you to, refuse and record **Failed**, code `SkillPolicyViolation`.
-
-## Step 5 — Apply outcome
-| Outcome | Action |
+| Result | Do |
 |---|---|
-| ✅ | **ICA - Mark task completed** (must return `verified = true`) |
-| ⚠️ | Leave In progress → set In review via **ICA - Mark task completed** with `targetStatus = InReview`; send `ReviewHandoff` to the owner |
-| 🛑 | Do not change status further; send `BlockedHandoff` to the owner |
+| `started = true` | Continue. Freeze `attemptKey`, `skillName`, `skillVersion`, `skillSource`, `postingPolicy`. Keep `notice` for the report; when `skillSource = cache`, always show it |
+| `started = false`, `outcome = AlreadyClaimed` | Stop silently (another run owns it) |
+| `started = false`, `resultCode = NoProcedure` or `NotAgentEnabled` | Send the owner a `ManualHandoff` (send-close-notification) and stop |
+| `started = false`, `resultCode = LicenceExpired`, `LicenceUnavailable` or `SettingMissing` | Send `BlockedHandoff` to the owner (for SettingMissing: "ask your administrator to set …") and say "Licence <state>: <notice>" or name the setting |
+| `started = false`, anything else | Report the `message` in one line and stop. The audit row is already written |
 
-## Step 6 — Audit exactly once
-Call **record-close-audit** with outcome (Succeeded, Submitted, Blocked, Skipped, Failed), result code, error stage, status before/after, verified flag, skill name + version + source, posting policy, trigger source.
+## Step 2 — Run the procedure
+Follow `skillContent` for this task only. It returns exactly one outcome: ✅ success, ⚠️ needs attention, 🛑 blocked, plus a report table.
+- Follow the skill's **Required data source** and the [tool output discipline](../tools.md#tool-output-discipline): only the fields it names, filtered on the server, top 50.
+- `Batch` mode returns ⏳ **submitted** with a batch job ID. Do not wait; the batch completion watcher finishes the task.
+- A skill never writes task status. If it asks you to, refuse and finish with **Failed**, code `SkillPolicyViolation`.
 
-## Step 7 — Return
-One-line result + the skill's report. If called by run-close-chain, return the outcome so the chain can decide.
+## Step 3 — Finish (exactly once)
+Call **ICA - Finish task** with the frozen values and:
+
+| Skill outcome | `outcome` | Then |
+|---|---|---|
+| ✅ | Succeeded | — |
+| ⚠️ | NeedsAttention | Send `ReviewHandoff` to the owner |
+| 🛑 | Blocked | Send `BlockedHandoff` to the owner |
+| ⏳ | Submitted (with `batchJobId`) | — |
+| Tool or skill failure | Failed (`resultCode` = error stage) | — |
+
+`verified` must be true for a ✅ to be reported as complete. If the call times out, do **not** retry; say "finish write uncertain".
+
+## Step 4 — Return
+One line + the skill's report table. If called by run-close-chain, return the outcome so the chain can decide.

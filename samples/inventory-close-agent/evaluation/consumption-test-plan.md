@@ -4,13 +4,15 @@ Follow [07 — Validating Copilot consumption](../../../docs/07-validating-copil
 
 ## What to expect (calculator estimate, Microsoft Copilot harness)
 
-This agent runs on the Microsoft Copilot harness, which Microsoft bills for model tokens, tools and the harness. The calculator approximates that as 2,000 tokens per agent action, so this estimate is **much less certain** than the Credit Hold one.
+This agent runs on the Microsoft Copilot harness, which Microsoft bills for model tokens, tools and the harness. The calculator approximates that as 1,500 tokens per agent action (after the trimmed instructions and the tool output rules), so this estimate is **much less certain** than the Credit Hold one.
 
 | Unit | Low | Expected | High |
 | --- | --- | --- | --- |
-| Credits per close task run | 307 | 510 | 1,820 |
-| Credits per reminder sweep | 91 | 151 | 543 |
-| Credits per chat session | 80 | 131 | 462 |
+| Credits per close task run | 157 | 254 | 867 |
+| Credits per reminder sweep | 50 | 82 | 284 |
+| Credits per chat session | 65 | 106 | 362 |
+
+The estimate assumes about 12 agent actions per task: *Start task*, about 7 ERP MCP reads named by the skill, *Finish task*, a notification and the report. Gates, routing, skill loading, the claim, status writes and audit run inside flows (about 90 flow actions).
 
 The harness charges credits while you build and preview too. Build and preview in your development environment; use the validation environment only for the scenario days.
 
@@ -39,6 +41,6 @@ Count items as terminal rows in `ica_closetaskaudit` (outcome Succeeded, Submitt
 
 ## Pass marks
 
-- Measured credits per close task at or below **1,820** (the high case). Above it: shorten local behaviors and skills, reduce tool calls, or test a cheaper model, then measure again.
+- Measured credits per close task at or below **867** (the high case). Above it: shorten local behaviors and skills, reduce tool calls, or test a cheaper model, then measure again.
 - Note the share of model-token credits in the breakdown. If it's over half, the quote depends on the model: record which one was used.
 - The two item days within 30% of each other.

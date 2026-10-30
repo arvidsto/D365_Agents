@@ -64,6 +64,7 @@ export function createService({ store, catalogue, settings = {}, clock = () => n
       name: s.name,
       version: s.version,
       description: s.description,
+      routing: s.routing,
       settings: s.settings
     }));
     return ok(audit, 'list', {

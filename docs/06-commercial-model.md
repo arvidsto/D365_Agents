@@ -64,16 +64,16 @@ flowchart LR
 
 | | Monthly |
 | --- | --- |
-| Copilot credits: 92 per hold × 300 = 27,630; scheduled checks 7,458; chat 1,040 | **36,128 credits** |
-| Cheapest Microsoft plan: 1 pack (25,000) + pay-as-you-go for the rest | USD 311 ≈ **SGD 405** (range SGD 290–780) |
+| Copilot credits: 58 per hold × 300 = 17,370; scheduled checks 858; chat 1,040 | **19,268 credits** |
+| Cheapest Microsoft plan: pay-as-you-go | USD 193 ≈ **SGD 250** (range SGD 190–440) |
 | Your subscription (Standard) | **SGD 800** |
-| **Customer pays in total** | **SGD 1,205** (range SGD 1,090–1,580) |
-| Value: 10 minutes saved per hold × 300 × SGD 55/hour | **SGD 2,750** (2.3× the monthly cost; 1.7× in the high case) |
-| Setup SGD 9,000 paid back in | **5.8 months** |
+| **Customer pays in total** | **SGD 1,050** (range SGD 990–1,240) |
+| Value: 10 minutes saved per hold × 300 × SGD 55/hour | **SGD 2,750** (2.6× the monthly cost; 2.2× in the high case) |
+| Setup SGD 9,000 paid back in | **5.3 months** |
 | Your cost: 3 hours × SGD 90 + SGD 15 licensing service hosting (see below) | SGD 285 |
 | **Your margin** | **SGD 515 (64%)** |
 
-**Lesson:** the scheduled check every 30 minutes uses about 7,500 credits a month, even when there are no new holds. Triggering the agent from a D365 business event instead cuts the customer's Microsoft bill from SGD 405 to SGD 308.
+**Lesson:** design decides the Microsoft bill. A first version that let the agent poll every 30 minutes and fetch each fact with its own MCP call needed about 36,000 credits a month (SGD 405). Moving the polling into a scheduled flow that only starts the agent for a new hold, and gathering the facts in one flow, brought it to about 19,000 (SGD 250) with the same decisions. See the [cost-efficient design checklist](02-solution-approach.md#cost-efficient-design-checklist).
 
 At 1,500 holds a month, the calculator moves the customer to **Plus** (SGD 1,400 is cheaper than Standard plus 1,000 items of overage). The value rises to SGD 13,750 a month, the setup pays back in under a month, and your margin rises to SGD 1,115.
 
@@ -81,15 +81,15 @@ At 1,500 holds a month, the calculator moves the customer to **Plus** (SGD 1,400
 
 | | Monthly |
 | --- | --- |
-| Copilot credits: about 510 per task × 16 = 8,157 (of which about 400 per task is model tokens on the Copilot harness); reminders 3,329; chat 3,930 | **15,415 credits** |
-| Microsoft (pay-as-you-go) | USD 154 ≈ **SGD 200** (range SGD 120–580) |
+| Copilot credits: about 254 per task × 16 = 4,059 (of which about 180 per task is model tokens on the Copilot harness); reminders 1,803; chat 3,180 | **9,042 credits** |
+| Microsoft (pay-as-you-go) | USD 90 ≈ **SGD 118** (range SGD 70–340) |
 | Your subscription: Standard SGD 800 + 1 extra company SGD 250 | **SGD 1,050** |
-| **Customer pays in total** | **SGD 1,250** (range SGD 1,170–1,630) |
-| Value: 2 hours saved per task × 16 × SGD 70/hour | **SGD 2,240** (1.8×; 1.4× in the high case) |
-| Setup paid back in | **9.1 months** |
+| **Customer pays in total** | **SGD 1,168** (range SGD 1,120–1,390) |
+| Value: 2 hours saved per task × 16 × SGD 70/hour | **SGD 2,240** (1.9×; 1.6× in the high case) |
+| Setup paid back in | **8.4 months** |
 | **Your margin** | **SGD 765 (73%)** |
 
-**Lesson:** even in the high case your fee is most of what the customer pays. The Microsoft figure is the least certain in this doc because the harness bills model tokens, so measure it ([validation kit](07-validating-copilot-consumption.md)) before quoting. Its value is mostly in a faster, controlled close, which the hours-saved figure understates. In the proposal, add the business value the controller cares about: days off the close, fewer adjustments after close, and audit evidence.
+**Lesson:** on a token-billed harness, every step re-reads the instructions, skills and earlier tool output. Two flows per task (*Start task*, *Finish task*) instead of six tool calls, shorter instructions and reading only the fields a skill names cut the estimate from about 510 to 254 credits per task. Even in the high case your fee is most of what the customer pays. The Microsoft figure is the least certain in this doc because the harness bills model tokens, so measure it ([validation kit](07-validating-copilot-consumption.md)) before quoting. Its value is mostly in a faster, controlled close, which the hours-saved figure understates. In the proposal, add the business value the controller cares about: days off the close, fewer adjustments after close, and audit evidence.
 
 ### What "licensing service hosting" means in your cost
 
@@ -114,7 +114,7 @@ Copilot credits per month = (credits per item × items) + scheduled runs + chat.
 - **Pay-as-you-go:** about USD 0.01 per credit, billed to the customer's Azure subscription.
 - **Prepaid packs:** 25,000 credits a month for about USD 200. The calculator picks the cheapest mix.
 - **Microsoft 365 Copilot users:** chat by employees with a Microsoft 365 Copilot licence, using the agent under their own identity, isn't charged. Scheduled and event-triggered runs always are.
-- **Reasoning models and the Microsoft Copilot harness** are also billed for the text the model reads and writes (10 credits per 1,000 tokens). The calculator approximates this as tokens per agent action (2,000 by default). It's the least predictable part of the bill. See the [billing overview](https://learn.microsoft.com/microsoft-copilot-studio/agents-experience/billing-credit-overview).
+- **Reasoning models and the Microsoft Copilot harness** are also billed for the text the model reads and writes (10 credits per 1,000 tokens). The calculator approximates this as tokens per agent action (2,000 by default; 1,500 in the trimmed Inventory Close preset). It's the least predictable part of the bill. See the [billing overview](https://learn.microsoft.com/microsoft-copilot-studio/agents-experience/billing-credit-overview).
 - **Ranges:** the calculator shows low, expected and high cases. The high case assumes twice the steps and, for token-billed models, twice the tokens per step. Quote the range until you have measured.
 - **Measure before a firm quote:** follow [07 — Validating Copilot consumption](07-validating-copilot-consumption.md). A few days of controlled runs in a validation environment give measured credits per item, per scheduled run and per chat. Enter them in the calculator and the range narrows to ±15%.
 

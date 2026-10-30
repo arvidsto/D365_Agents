@@ -1,6 +1,7 @@
 ---
 name: InventoryClose_RunInventoryClose
 description: Starts the inventory close for the close run's period end date as a batch job, only after the readiness tasks are complete and a cost accountant has approved it through ICA - Request approval. Never reverses, cancels or recalculates. Matches task names containing "run inventory close". ApprovalRequired, Batch.
+routing: run inventory close
 ---
 
 # Run inventory close
@@ -19,6 +20,7 @@ Submits one inventory close (settlement and GL update) for the period end date i
 Task **Name** must contain `run inventory close`. Area = Inventory corroborates only. Exclude: recalculation, reverse, cancel, pre-closing.
 
 ## Required data source
+- **Read only what the procedure needs:** select only the fields named in this skill, filter on the server (company, dates, status), and ask for at most the rows you will report (top 50). Never read full records or whole tables; every extra field is paid for in tokens at every later step.
 - Dynamics 365 ERP MCP, **Closing and adjustment** page (Cost management › Inventory accounting › Closing and adjustment, or Inventory management › Periodic tasks › Closing and adjustment in older versions). Use data tools to read existing closings; use form tools only for the steps below.
 
 ## Readiness (all must be true, from fresh reads)

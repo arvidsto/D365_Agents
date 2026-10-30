@@ -12,13 +12,17 @@ test('credits per item use the published rates', () => {
   close(C.creditsPerItem({ agentActions: 4 }, { type: 'reasoning', kTokensPerAction: 2 }), 20 + 80);
 });
 
-test('Credit Hold preset: Standard tier, credits mix packs and pay-as-you-go', () => {
+test('Credit Hold preset: Standard tier, flows do the fetching, pay-as-you-go is cheapest', () => {
   const r = C.calculate(C.fromPreset('credit-hold'));
-  close(r.credits.total, 27630 + 7458 + 1040);
+  // per hold: 6 actions x5 + 180 flow actions x0.13 + 3K prompt tokens x1.5 = 57.9
+  close(r.credits.perItem, 57.9);
+  // the scheduled check runs no agent: 15 flow actions only
+  close(r.credits.perScheduledRun, 1.95);
+  close(r.credits.total, 17370 + 858 + 1040);
   assert.equal(r.subscription.chosen.tier, 'Standard');
   assert.equal(r.subscription.monthlySgd, 800);
-  assert.match(r.microsoft.bestPlan, /1 pack \+ pay-as-you-go/);
-  close(r.microsoft.bestUsd, 200 + 11128 * 0.01);
+  assert.match(r.microsoft.bestPlan, /Pay-as-you-go/);
+  close(r.microsoft.bestUsd, 19268 * 0.01);
   close(r.customer.valueMonthlySgd, 2750);
   assert.ok(r.warnings.some((w) => /Scheduled runs/.test(w)) === false); // scheduled < items here
 });
@@ -29,6 +33,8 @@ test('Inventory Close preset: extra legal entity is an add-on, not a higher tier
   assert.equal(r.subscription.chosen.entityAddOn, 250);
   assert.equal(r.subscription.monthlySgd, 1050);
   assert.equal(r.settings.model.type, 'harness');
+  // 12 actions x5 + 1 answer x2 + 90 flow actions x0.13 + 12 actions x 1.5K tokens x10
+  close(r.credits.perItem, 253.7);
   assert.ok(r.warnings.some((w) => /model tokens/.test(w)));
 });
 
@@ -69,8 +75,8 @@ test('range: low < expected < high, and the subscription is the same in all thre
   assert.ok(r.range.expected.credits < r.range.high.credits);
   close(r.range.expected.credits, r.credits.total);
   close(r.range.high.customerMonthlySgd - r.range.high.microsoftSgd, r.subscription.monthlySgd);
-  // standard model high case = steps x2
-  close(r.range.high.credits, (92.1 - 4.5) * 2 * 300 + 4.5 * 2 * 300 + 440 * (3 * 2 * 5 + 15 * 2 * 0.13) + 40 * (4 * 2 * 5 + 3 * 2 * 2));
+  // standard model high case = steps x2 (prompt tokens x2 too)
+  close(r.range.high.credits, 57.9 * 2 * 300 + 440 * (15 * 2 * 0.13) + 40 * (4 * 2 * 5 + 3 * 2 * 2));
 });
 
 test('reasoning model adds token credits in every case and widens the high case', () => {

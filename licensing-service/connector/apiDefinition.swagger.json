@@ -198,6 +198,10 @@
               "description": {
                 "type": "string"
               },
+              "routing": {
+                "type": "string",
+                "description": "Exact lowercase task-name phrase this skill handles; empty for supporting skills. Lets a flow route a task without the model."
+              },
               "settings": {
                 "type": "array",
                 "items": {

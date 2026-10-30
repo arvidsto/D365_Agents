@@ -6,11 +6,11 @@ Follow [07 — Validating Copilot consumption](../../../docs/07-validating-copil
 
 | Unit | Low | Expected | High |
 | --- | --- | --- | --- |
-| Credits per hold reviewed | 69 | 92 | 184 |
-| Credits per scheduled check (every 30 min) | 13 | 17 | 34 |
+| Credits per hold reviewed | 43 | 58 | 116 |
+| Credits per scheduled check (every 30 min, flow only) | 1.5 | 2 | 4 |
 | Credits per chat session | 20 | 26 | 52 |
 
-The estimate assumes about 14 agent actions per hold (load policy, register, 5 ERP MCP reads, 3 Dataverse MCP reads, build case, request approval, apply decision), 120 agent flow actions and 3K prompt tokens. If you switch the agent to a reasoning model, re-run the calculator with that model first; the range widens a lot.
+The estimate assumes about 6 agent actions per hold (two agent sessions: *Build credit case*, *Request approval*, *Apply decision* and the session starts), 180 agent flow actions (the scheduled check, registration and *Gather credit facts* run as flows) and 3K prompt tokens. The scheduled check never starts the agent, so it should show only agent flow actions in the report. If you switch the agent to a reasoning model, re-run the calculator with that model first; the range widens a lot.
 
 ## Setup specific to this agent
 
@@ -35,7 +35,7 @@ Day 3 uses 20 of these, day 4 the other 25.
 
 ```csv
 date,agent,scenario,items,scheduledRuns,chatSessions,notes
-<day1>,Credit Hold Review Agent,scheduled,0,20,0,Idle: recurrence in business hours only
+<day1>,Credit Hold Review Agent,scheduled,0,22,0,Idle: check flow in business hours only; expect no agent sessions
 <day2>,Credit Hold Review Agent,chat,0,0,15,TC09-TC15 chat questions plus 8 'why' questions
 <day3>,Credit Hold Review Agent,items,20,20,0,20 holds; approvals within 15 min
 <day4>,Credit Hold Review Agent,items,25,20,0,25 holds; includes the messy cases
@@ -45,7 +45,7 @@ Count items as `chr_creditdecisionlog` rows with action *CaseBuilt* or *ManualRe
 
 ## Pass marks
 
-- Measured credits per hold at or below **184** (the high case). Above it: redesign before quoting.
-- Credits per scheduled check at or below **34**. If higher, move to a business-event trigger.
+- Measured credits per hold at or below **116** (the high case). Above it: check the activity map for extra MCP calls by the agent (it should call only flows on the autonomous path), then redesign before quoting.
+- Credits per scheduled check at or below **4**. If the day-1 report shows any *agent action* rows, the check flow is starting the agent: fix that first.
 - The two item days within 30% of each other.
 - No *Text and generative AI tools (premium)* in the breakdown unless you chose a reasoning model.

@@ -21,7 +21,7 @@ These fill the `{{env:…}}` placeholders in the skills inside this tenant, so t
 | `ica_BusinessHours` | Text | `07:00–19:00` | `InventoryClose_RunInventoryClose` — window to avoid when starting the close (company time) |
 | `ica_InventoryMainAccounts` | Text | `140100, 140150, 140200` | `InventoryClose_InventoryToGLReconciliation` — inventory main accounts to reconcile |
 
-If a skill uses a setting that is empty or missing, *ICA - Load licensed skill* stops the task with `SettingMissing` instead of running it with a blank value.
+If a skill uses a setting that is empty or missing, *ICA - Load licensed skill (child)* stops the task with `SettingMissing` instead of running it with a blank value.
 
 
 | Connection reference | Connector | Used by |
@@ -33,4 +33,4 @@ If a skill uses a setting that is empty or missing, *ICA - Load licensed skill* 
 | `ica_Teams` | Microsoft Teams | ICA - Request approval |
 | `ica_FinOps` | Fin & Ops Apps (Dynamics 365) | Batch completion watcher (read only) |
 | `ica_Agents` | Agents (preview) | Event and scheduled flows |
-| `ica_LicensedSkills` | Licensed Agent Skills (custom connector, REST) | *ICA - Load licensed skill*; API key = `ica_LicenceKey` |
+| `ica_LicensedSkills` | Licensed Agent Skills (custom connector, REST) | *ICA - Load licensed skill (child)*; API key = `ica_LicenceKey` |

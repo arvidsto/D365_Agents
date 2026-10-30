@@ -185,6 +185,22 @@ Monthly review with the business owner:
 
 ---
 
+## Cost-efficient design checklist
+
+Copilot credits are charged per **agent step**, and on reasoning models or the Microsoft Copilot harness also per **token the model reads**, at every step. An agent flow action costs about 1/40 of an agent step. So the cheapest agent is the one where **flows do the fetching and the agent does the judgement**. Apply these when you design the tools (Phase 2–3), and check them in the consumption validation (Phase 4).
+
+| # | Rule | Why it saves | Example in the samples |
+| --- | --- | --- | --- |
+| 1 | **Don't let the agent poll.** A scheduled or event flow finds new work and starts the agent only when there is some | An idle agent run still costs agent actions; an idle flow costs a few flow actions | Credit Hold: *Check for new holds* runs every 30 min without the agent |
+| 2 | **Gather facts in one flow,** not one MCP call per fact | One agent action instead of 5–10 | Credit Hold: *Gather credit facts* inside *Build credit case* |
+| 3 | **Put deterministic steps in flows:** gates, routing, claims, status writes, audit | The agent can't skip them, and they don't cost agent steps | Inventory Close: *Start task* and *Finish task* |
+| 4 | **Read only what you need:** `$select` the fields, filter on the server, top N rows; never full records | Every token returned is read again at each later step on token-billed models | Tool output discipline in both samples' tools and skills |
+| 5 | **Keep instructions short** and move procedure detail into skills loaded only when needed | Instructions are sent with every step | Inventory Close core instructions; skill per task |
+| 6 | **Add only the tools the agent calls;** keep child flows and unused MCP tools off | A shorter tool list is a smaller prompt at every step | Child flows aren't agent tools |
+| 7 | **Use a general model** unless evaluation proves you need reasoning | Reasoning and harness models add 10 credits per 1,000 tokens | Credit Hold uses the standard orchestration |
+| 8 | **Let chat run under the user's Microsoft 365 Copilot licence** where they have one | Employee chat by licensed users isn't charged | Chat path in both samples |
+| 9 | **Measure, then tune:** read the step count per item in the activity map and the credits in the consumption report | Finds the expensive step | [Consumption validation](07-validating-copilot-consumption.md) |
+
 ## Checklist: is my agent production-ready?
 
 - [ ] Process owner and security have signed the design canvas
@@ -196,5 +212,5 @@ Monthly review with the business owner:
 - [ ] Reprocessing a work item twice cannot create duplicates (idempotent)
 - [ ] Evaluation set passed and stored with the solution
 - [ ] Data policy (DLP) allows exactly the connectors used
-- [ ] Credits per item measured and billing configured
+- [ ] [Cost-efficient design checklist](#cost-efficient-design-checklist) applied; credits per item measured and billing configured
 - [ ] Runbook and owners documented

@@ -1,6 +1,7 @@
 ---
 name: InventoryClose_OpenJournalsCheck
 description: Read-only check for unposted inventory journals (movement, adjustment, transfer, counting, BOM) with lines dated on or before the period end. Matches task names containing "inventory journals posted". ReadOnly.
+routing: inventory journals posted
 ---
 
 # Inventory journals posted — check
@@ -17,6 +18,7 @@ description: Read-only check for unposted inventory journals (movement, adjustme
 Task **Name** must contain `inventory journals posted`. Area = Inventory corroborates only. Exclude: general ledger journals.
 
 ## Required data source
+- **Read only what the procedure needs:** select only the fields named in this skill, filter on the server (company, dates, status), and ask for at most the rows you will report (top 50). Never read full records or whole tables; every extra field is paid for in tokens at every later step.
 - Dynamics 365 ERP MCP data tools on inventory journal header and line entities (posted flag, journal type, transaction date). Confirm fields from metadata.
 
 ## Policy — *edit to change the policy*

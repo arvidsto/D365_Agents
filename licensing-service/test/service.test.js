@@ -11,7 +11,7 @@ test('valid key returns the watermarked skill', async () => {
   assert.equal(r.status, 200);
   assert.equal(r.body.licensed, true);
   assert.match(r.body.content, /name: InventoryClose_RunInventoryClose/);
-  assert.match(r.body.content, new RegExp(`licence=${licenceId} agent=${AGENT} skill=${SKILL}@1.1.0`));
+  assert.match(r.body.content, new RegExp(`licence=${licenceId} agent=${AGENT} skill=${SKILL}@1.2.0`));
 });
 
 test('list returns names and descriptions only, never skill bodies', async () => {
@@ -20,8 +20,10 @@ test('list returns names and descriptions only, never skill bodies', async () =>
   assert.equal(r.body.licensed, true);
   assert.ok(r.body.skills.length >= 7);
   for (const s of r.body.skills) {
-    assert.deepEqual(Object.keys(s).sort(), ['description', 'name', 'settings', 'version']);
+    assert.deepEqual(Object.keys(s).sort(), ['description', 'name', 'routing', 'settings', 'version']);
   }
+  const close = r.body.skills.find((s) => s.name === 'InventoryClose_RunInventoryClose');
+  assert.equal(close.routing, 'run inventory close');
 });
 
 test('missing, malformed and wrong keys get the same 401', async () => {

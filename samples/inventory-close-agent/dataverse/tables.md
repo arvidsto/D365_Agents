@@ -72,7 +72,7 @@ Alternate key: `ica_attemptkey` + `ica_rowtype` + `ica_resultcode` (prevents dup
 
 ## ica_skillcache — short-lived copies of licensed skills
 
-Used only by *ICA - Load licensed skill* when the licensing service can't be reached.
+Used only by *ICA - Load licensed skill (child)* when the licensing service can't be reached.
 
 | Column | Type | Notes |
 | --- | --- | --- |

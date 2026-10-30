@@ -4,7 +4,7 @@
 
 | Schema name | Type | Default | Purpose |
 | --- | --- | --- | --- |
-| `chr_CompanyCodes` | Text | `USMF` | Comma-separated legal entities the scheduled run checks |
+| `chr_CompanyCodes` | Text | `USMF` | Comma-separated legal entities the scheduled check reads |
 | `chr_FinOpsBaseUrl` | Text | – | e.g. `https://contoso.operations.dynamics.com` — used for deep links |
 | `chr_CreditManagerEmail` | Text | – | Approver (user or group mailbox / Teams user) |
 | `chr_ReviewerEmail` | Text | – | Receives ManualReview items |
@@ -28,7 +28,7 @@ The three thresholds are customer settings: the licensed skills contain `{{env:�
 | `chr_Dataverse` | Microsoft Dataverse | Service account |
 | `chr_Office365Outlook` | Office 365 Outlook | Service mailbox |
 | `chr_Teams` | Microsoft Teams | Service account (Flow bot) |
-| `chr_FinOps` | Fin & Ops Apps (Dynamics 365) | Service account with *Credit Hold Agent* role — Option B only |
-| `chr_ERPMCP` | Dynamics 365 ERP MCP | Service account (scheduled) / end user (chat) |
-| `chr_DataverseMCP` | Dataverse MCP Server | Service account (scheduled) / end user (chat) |
+| `chr_FinOps` | Fin & Ops Apps (Dynamics 365) | Service account with *Credit Hold Agent* role. Reads in *Check for new holds* and *Gather credit facts*; the release action only in Option B |
+| `chr_ERPMCP` | Dynamics 365 ERP MCP | End user (chat only; the autonomous path reads F&O through flows) |
+| `chr_DataverseMCP` | Dataverse MCP Server | End user (chat only) |
 | `chr_LicensedSkills` | Licensed Agent Skills (custom connector, REST) | *CHR - Load licensed skill (child)*; API key = `chr_LicenceKey` |

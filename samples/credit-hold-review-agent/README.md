@@ -8,7 +8,7 @@ It is built with exactly the same building blocks as the Microsoft FastTrack **S
 | --- | --- |
 | **D365 apps** | Finance (Credit management), Sales / Customer Service on Dataverse (optional) |
 | **Platform** | Copilot Studio, agent flows, Dataverse, Teams / Outlook, SharePoint |
-| **Tools** | Dynamics 365 ERP MCP, Dataverse MCP, 5 agent flows, 1 AI prompt |
+| **Tools** | 4 agent flows + 4 child flows + 1 scheduled flow, 1 AI prompt; Dynamics 365 ERP MCP and Dataverse MCP for chat questions |
 | **Autonomy** | L1 *Recommend* → L2 *Act with approval* (see [autonomy ladder](../../docs/02-solution-approach.md#22-decide-the-autonomy-level-per-action)) |
 | **Status** | Learning sample / blueprint — build it in your dev environment by following this guide |
 
@@ -30,28 +30,34 @@ Credit management in D365 Finance puts sales orders on hold when a blocking rule
 
 ## 2. Architecture
 
+The design keeps the agent's work small: **flows do the fetching, the agent does the judgement.** A scheduled flow finds new holds without waking the agent, and one flow gathers all facts for a hold, so each hold costs a handful of agent actions instead of a dozen (see [docs/02 — cost-efficient design](../../docs/02-solution-approach.md#cost-efficient-design-checklist)).
+
 ```mermaid
 flowchart TB
     subgraph TRG["Triggers"]
-        TR1["⏰ Recurrence<br/>every 30 min"]
-        TR2["💬 Teams / M365 Copilot<br/>'Review holds for US-003'"]
-        TR3["🔁 Dataverse: review item<br/>status changed"]
+        TR1["⏰ CHR – Check for new holds<br/>scheduled flow, every 30 min<br/>(no agent, no AI)"]
+        TR2["💬 Teams / M365 Copilot<br/>'Why is 000815 on hold?'"]
+        TR3["🔁 Dataverse: review item<br/>added (New) or decided"]
     end
 
     subgraph AG["Copilot Studio — Credit Hold Review Agent"]
         INS["Instructions<br/>(agent/instructions.md)"]
-        SKL["Credit policy skill<br/>loaded at run time from<br/>your licensing service"]
         KNW["Knowledge: credit policy<br/>document (SharePoint)"]
     end
 
-    subgraph TLS["Tools"]
-        M1["Dynamics 365 ERP MCP<br/>read holds, customer, aging, order"]
-        M2["Dataverse MCP<br/>read account, opportunities, cases"]
-        F1["CHR – Register hold"]
-        F2["CHR – Build credit case<br/>+ AI prompt recommendation"]
+    subgraph TLS["Agent tools"]
+        F2["CHR – Build credit case<br/>gathers facts + AI prompt"]
         F3["CHR – Request approval"]
         F4["CHR – Apply decision"]
-        F5["CHR – Log & notify"]
+        F6["CHR – Load licensed skill<br/>(chat: policy questions)"]
+        M1["ERP MCP · Dataverse MCP<br/>(chat only, few fields)"]
+    end
+
+    subgraph CH["Child flows"]
+        F1["Register hold"]
+        F7["Gather credit facts"]
+        F8["Load licensed skill (child)"]
+        F5["Log & notify"]
     end
 
     subgraph DATA["Data"]
@@ -59,20 +65,24 @@ flowchart TB
         CE[("Dataverse<br/>Account · Opportunity · Case")]
         RV[("chr_creditholdreview<br/>work item + status")]
         AU[("chr_creditdecisionlog<br/>audit")]
-        CFG[("Environment variables<br/>thresholds")]
+        LS["Licensing service<br/>(your tenant)"]
     end
 
     HUM["🙋 Credit manager<br/>Teams adaptive card / Outlook<br/>+ model-driven review app"]
 
-    TRG --> AG
-    AG --> M1 & M2 & F1 & F2 & F3 & F4 & F5
-    M1 --> FO
-    M2 --> CE
-    F1 & F2 & F4 & F5 --> RV
+    TR1 --> F1 --> RV
+    TR1 --> FO
+    RV -. new row / decision .-> TR3
+    TR2 & TR3 --> AG
+    AG --> F2 & F3 & F4 & F6 & M1
+    F2 --> F7 & F8
+    F7 --> FO & CE
+    F6 & F8 --> LS
+    F2 & F4 --> F5
     F5 --> AU
-    F2 --> CFG
     F3 <--> HUM
     F4 --> FO
+    M1 --> FO & CE
 ```
 
 ### Status lifecycle of a review item
@@ -99,30 +109,28 @@ stateDiagram-v2
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Rec as Recurrence trigger
+    participant Chk as Check for new holds (scheduled flow)
+    participant DV as Dataverse
     participant Ag as Agent
-    participant ERP as ERP MCP (D365 Finance)
-    participant DVM as Dataverse MCP (CRM)
     participant Fl as Agent flows
     participant Mgr as Credit manager
 
-    Rec->>Ag: "Check for new credit holds"
-    Ag->>ERP: Find open credit holds (company, since last run)
-    loop each new hold
-        Ag->>Fl: CHR – Register hold (idempotent on order + company)
-        Ag->>ERP: Customer credit limit, balance, overdue, aging, order total
-        Ag->>DVM: Account owner, open opportunities, open cases / disputes
-        Ag->>Fl: CHR – Build credit case (facts JSON)
-        Fl-->>Ag: Recommendation + reasons + confidence
-        alt Within auto-release policy (L3, off by default)
-            Ag->>Fl: CHR – Apply decision
-        else Needs approval (default)
-            Ag->>Fl: CHR – Request approval
-            Fl->>Mgr: Adaptive card with case file
-            Mgr-->>Fl: Approve / Reject + comment
-            Fl->>Fl: CHR – Apply decision
-        end
-        Fl->>Fl: CHR – Log & notify (audit row, email to sales owner)
+    Chk->>Chk: Licence status, then F&O hold list ($select, open only)
+    alt nothing new
+        Chk-->>Chk: stop (no agent run)
+    else new hold
+        Chk->>DV: Register hold (idempotent on order + company)
+        DV->>Ag: Row added → "Review hold {reviewId}"
+        Ag->>Fl: CHR – Build credit case (reviewId)
+        Fl->>Fl: Gather credit facts (F&O + CRM, needed fields only)
+        Fl->>Fl: Load prompt skill, AI recommendation, save case
+        Fl-->>Ag: Recommendation + reasons + routeTo
+        Ag->>Fl: CHR – Request approval (if routeTo = Approval)
+        Fl->>Mgr: Adaptive card with case file
+        Mgr-->>DV: Approve / Reject + comment
+        DV->>Ag: Status changed → "Continue review {reviewId}"
+        Ag->>Fl: CHR – Apply decision
+        Fl->>Fl: Log & notify (audit row, email to sales owner)
     end
 ```
 
@@ -133,7 +141,7 @@ sequenceDiagram
 | [`agent/instructions.md`](agent/instructions.md) | The agent instructions to paste into Copilot Studio |
 | [Credit policy skill](../../licensing-service/skills/credit-hold-review-agent/CHR_CreditPolicy.md) | The business policy, now served by the [licensing service](../../licensing-service/README.md), not shipped in the solution |
 | [`agent/tools.md`](agent/tools.md) | Every tool: name, description (for the orchestrator), inputs, outputs |
-| [`flows/agent-flows.md`](flows/agent-flows.md) | Step-by-step specification of the 5 agent flows |
+| [`flows/agent-flows.md`](flows/agent-flows.md) | Step-by-step specification of the scheduled check, agent flows and child flows |
 | [`prompts/credit-recommendation-prompt.md`](prompts/credit-recommendation-prompt.md) | The AI prompt with JSON output schema and examples |
 | [`dataverse/tables.md`](dataverse/tables.md) | Tables, columns, choices, security role and review app |
 | [`dataverse/adaptive-card-approval.json`](dataverse/adaptive-card-approval.json) | Teams adaptive card for approvals |
@@ -169,18 +177,18 @@ Follow the [solution approach](../../docs/02-solution-approach.md#phase-3--build
 4. Create the model-driven app **Credit Hold Review** with the two tables and the views described there.
 
 ### Step 3 — Agent flows (deterministic tools)
-5. In **Copilot Studio → Flows**, create the agent flows and the two child flows from [`flows/agent-flows.md`](flows/agent-flows.md). Each starts with *When an agent calls the flow* and ends with *Respond to the agent*.
+5. In **Copilot Studio → Flows**, create the agent flows from [`flows/agent-flows.md`](flows/agent-flows.md) (*When an agent calls the flow* … *Respond to the agent*). Create the child flows (*Register hold*, *Gather credit facts*, *Load licensed skill (child)*, *Log & notify*) and the scheduled cloud flow *CHR - Check for new holds* in the same solution. Every F&O and Dataverse read uses `$select` and a filter: only the fields the policy needs.
 6. Create the AI prompt from [`prompts/credit-recommendation-prompt.md`](prompts/credit-recommendation-prompt.md) and call it from *CHR – Build credit case*.
 7. Test each flow on its own with a real hold from USMF.
 
 ### Step 4 — The agent
 8. Create agent **Credit Hold Review Agent** in the same environment and add it to the solution.
 9. Paste [`agent/instructions.md`](agent/instructions.md) into **Instructions**.
-10. **Tools → Add a tool → Model Context Protocol → Dynamics 365 ERP MCP.** Connect, then turn off *Allow all* and keep only read/data tools for the first release (see [`agent/tools.md`](agent/tools.md)).
+10. **Tools → Add a tool → Model Context Protocol → Dynamics 365 ERP MCP** (for chat questions only). Connect with end-user authentication, turn off *Allow all* and keep only read/data tools (see [`agent/tools.md`](agent/tools.md)).
 11. **Tools → Add → Dataverse MCP Server.** Keep only `search`, `read_query`, `fetch`. Turn off all create/update/delete/table tools.
-12. **Tools → Add → Agent flow** for each CHR flow; paste the descriptions from [`agent/tools.md`](agent/tools.md).
-13. **Knowledge → Add** the credit policy document (SharePoint or upload [`knowledge/credit-policy-sample.md`](knowledge/credit-policy-sample.md)). Add the *CHR - Load licensed skill* agent flow as a tool (see [Licensing](#licensing)); the agent loads the credit policy skill with it at run time.
-14. **Triggers → Add → Recurrence** every 30 minutes with payload `Check for new credit holds in company {CompanyCode}`. Add a Dataverse trigger *When a row is modified* on `chr_creditholdreview` (column `chr_status`) with payload `Continue review {chr_creditholdreviewid}`.
+12. **Tools → Add → Agent flow** for the four agent flows only: *Build credit case*, *Request approval*, *Apply decision*, *Load licensed skill*. Paste the descriptions from [`agent/tools.md`](agent/tools.md). Don't add child flows as tools: fewer tools means a shorter tool list in every orchestration step.
+13. **Knowledge → Add** the credit policy document (SharePoint or upload [`knowledge/credit-policy-sample.md`](knowledge/credit-policy-sample.md)). The agent loads the licensed policy skill only when a user asks about policy (see [Licensing](#licensing)).
+14. **Triggers:** add a Dataverse trigger *When a row is added* on `chr_creditholdreview` (filter `chr_status eq New`) with payload `Review hold {chr_creditholdreviewid}`, and *When a row is modified* (column `chr_status`, filter Approved or Rejected) with payload `Continue review {chr_creditholdreviewid}`. Don't add a recurrence trigger to the agent: the scheduled flow does the polling.
 15. Settings → generative orchestration **on**; general knowledge **off**; web search **off**.
 
 ### Step 5 — Test, then publish
@@ -195,7 +203,8 @@ The policy skill and the recommendation prompt are your IP, so they're served by
 
 | Where | What it fetches | If the licence isn't valid |
 | --- | --- | --- |
-| Agent, start of every scheduled run and chat question about policy | `CHR_CreditPolicy` via *CHR - Load licensed skill* | Registers no new holds, replies "Licence <state>: <notice>" |
+| *CHR - Check for new holds*, every check | Licence status only (`GetLicenceStatus`) | Registers no new holds, so the agent is never started |
+| Agent, only when a chat user asks about policy | `CHR_CreditPolicy` via *CHR - Load licensed skill* | Replies "Licence <state>: <notice>" |
 | *CHR - Build credit case* flow, every case | `CHR_CreditRecommendationPrompt` via *CHR - Load licensed skill (child)* | Routes the case to manual review with the reason, records `LicenceBlocked` |
 | *CHR - Apply decision* (already decided reviews) | Nothing | Always finishes, so no review is left half done |
 

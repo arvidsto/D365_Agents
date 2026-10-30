@@ -1,6 +1,7 @@
 ---
 name: InventoryClose_InventoryToGLReconciliation
 description: Read-only reconciliation of the inventory value at the period end against the balances of the inventory ledger accounts, after the inventory close has ended. Matches task names containing "reconcile inventory value". ReadOnly.
+routing: reconcile inventory value
 ---
 
 # Reconcile inventory value to GL
@@ -17,6 +18,7 @@ description: Read-only reconciliation of the inventory value at the period end a
 Task **Name** must contain `reconcile inventory value`. Area = Inventory or General ledger corroborates only. Exclude: tasks asking to post corrections.
 
 ## Required data source
+- **Read only what the procedure needs:** select only the fields named in this skill, filter on the server (company, dates, status), and ask for at most the rows you will report (top 50). Never read full records or whole tables; every extra field is paid for in tokens at every later step.
 - Dynamics 365 ERP MCP: inventory value (inventory value report storage / on-hand value by item group) as of the period end, and trial balance or main account balances for the inventory accounts. Confirm entity names from metadata. If inventory value data is not exposed as an entity, stop with 🛑 and recommend exposing the *Inventory value report storage* or a custom entity.
 
 ## Precondition

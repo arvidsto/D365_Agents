@@ -2,14 +2,82 @@
 
 Agent flows must finish within the Copilot Studio agent-flow time limit (about 100 seconds). Anything longer is handed to batch and finished by the watcher.
 
+**Cost rule:** every agent tool call is an agent action (5 credits, plus model tokens on the Copilot harness); a flow action costs about 0.13. So the deterministic steps of a task (fresh read, gates, routing, skill load, claim, status write, audit) run inside **two** agent flows, *ICA - Start task* and *ICA - Finish task*, and the agent spends its steps only on the business procedure. The building blocks below them are child flows (**Manually trigger a flow** … **Respond to a PowerApp or flow**).
+
 Connection references: `ica_Dataverse`, `ica_Agents`, `ica_Teams`, `ica_FinOps` (watcher reads), `ica_LicensedSkills` (licensing service connector), `ica_Office365` (only if not using Work IQ Mail).
 
 ---
 
-## ICA - Mark task started
+## ICA - Start task (agent tool)
+
+One call replaces the old sequence *fresh read → gates → catalogue → skill → Mark task started*.
 
 ```text
 Trigger: When an agent calls the flow
+  inputs: taskId, triggerSource (Chat | HumanStart | CompletionAutostart), chainRun (yes/no)
+
+1. Get row ica_closetask(taskId) + parent ica_closerun
+     $select = name, status, blocked, blockedreason, agentenabled, dependson, duedate,
+               owner, currentattemptkey (task); locked, company, periodend (run)
+   attemptKey = taskId + '-' + formatDateTime(utcNow(), 'yyyyMMddHHmm')
+2. Gates, in this order (first failure → step 7 with outcome Skipped or Blocked):
+     run.locked = No                                              else Blocked  RunLocked
+     status in (NotStarted, Returned), or InProgress when
+       triggerSource = HumanStart                                  else Skipped  PendingHuman
+     blocked = No                                                 else Blocked  TaskBlocked
+     agentenabled = Yes                                           else Skipped  NotAgentEnabled
+     every task in dependson is Complete (one List rows, $select = status)
+                                                                  else Skipped  WaitingForDependencies
+     chainRun = yes → duedate <= today + ica_LeadDays             else Skipped  NotYetDue
+3. Route: Run child ICA - Load licensed skill (child) with skillName = '' (catalogue)
+     licensed = false → step 7 Blocked LicenceExpired (state unavailable → LicenceUnavailable)
+     candidates = catalogue skills where routing != '' and
+                  contains(toLower(task.name), routing)
+     0 → step 7 Skipped NoProcedure;  2+ → step 7 Blocked AmbiguousRouting
+4. Run child ICA - Load licensed skill (child) with the one skillName
+     licensed = false → as in 3;  state = setting-missing → step 7 Blocked SettingMissing
+5. Unless the HumanStart task is already InProgress:
+     Run child ICA - Mark task started (taskId, attemptKey, triggerSource)
+     alreadyClaimed → Respond started = false, outcome = AlreadyClaimed (no audit)
+     verified = false → step 7 Failed MarkStarted
+6. Respond: started = true, attemptKey, company, periodEnd, taskName, owner,
+     skillName, skillVersion, skillSource, notice, postingPolicy, executionMode,
+     skillContent
+7. (not started) Run child ICA - Record task audit (attemptKey with '-skip-', outcome,
+     resultCode, errorStage); Respond started = false, outcome, resultCode, owner,
+     message, notice
+```
+
+The agent then follows `skillContent` and nothing else: the task row, gates and routing are already settled, so it doesn't read the checklist again.
+
+## ICA - Finish task (agent tool)
+
+One call replaces *Mark task completed → Record task audit*.
+
+```text
+Trigger: When an agent calls the flow
+  inputs: taskId, attemptKey, outcome (Succeeded | NeedsAttention | Blocked | Submitted | Failed),
+          resultCode, resultSummary (<= 500 chars, no personal data), batchJobId,
+          skillName, skillVersion, skillSource, postingPolicy, triggerSource
+
+1. outcome = Succeeded       → Run child ICA - Mark task completed (targetStatus = Complete)
+   outcome = NeedsAttention  → Run child ICA - Mark task completed (targetStatus = InReview)
+   outcome = Submitted       → Update ica_closetask.ica_batchjobid = batchJobId (status stays
+                               InProgress; the batch completion watcher finishes it)
+   outcome = Blocked/Failed  → no status change
+2. Run child ICA - Record task audit with every input plus statusBefore, statusAfter,
+   statusVerified from step 1
+3. Respond: verified, statusAfter, auditId, duplicate
+```
+
+---
+
+## ICA - Mark task started (child)
+
+Called by *Start task*; never by the agent.
+
+```text
+Trigger: Manually trigger a flow
   inputs: taskId, attemptKey, triggerSource
 
 1. Get row ica_closetask(taskId)  (+ parent ica_closerun)
@@ -31,10 +99,12 @@ Trigger: When an agent calls the flow
      statusBefore, statusAfter
 ```
 
-## ICA - Mark task completed
+## ICA - Mark task completed (child)
+
+Called by *Finish task* and the batch completion watcher.
 
 ```text
-Trigger: When an agent calls the flow   inputs: taskId, attemptKey, targetStatus, resultSummary
+Trigger: Manually trigger a flow   inputs: taskId, attemptKey, targetStatus, resultSummary
 1. Get row; guard status == InProgress and currentattemptkey == attemptKey
 2. Add audit row CompleteClaimed (same alternate-key protection)
 3. Update status = targetStatus (Complete | InReview), ica_lastchangedbyagent=Yes,
@@ -42,10 +112,12 @@ Trigger: When an agent calls the flow   inputs: taskId, attemptKey, targetStatus
 4. Fresh read → Respond verified, statusBefore, statusAfter
 ```
 
-## ICA - Record task audit
+## ICA - Record task audit (child)
+
+Called by *Start task*, *Finish task* and the watcher.
 
 ```text
-Trigger: When an agent calls the flow  inputs: (see tools.md)
+Trigger: Manually trigger a flow  inputs: (see Finish task)
 1. List ica_closetaskaudit where ica_attemptkey = attemptKey and ica_rowtype = Terminal
    Exists → Respond duplicate=true, auditId
 2. Add row (rowtype = Terminal, all inputs, ica_recordedon = utcNow())
@@ -70,12 +142,12 @@ Trigger: When an agent calls the flow  inputs: taskId, attemptKey, summary
 
 > If the agent-flow time limit is shorter than your wait, split the flow: post the card from a cloud flow, return `Pending`, and let the controller's response update `ica_approval` and set the task to In progress (HumanStart path).
 
-## ICA - Load licensed skill
+## ICA - Load licensed skill (child)
 
-The only way the agent gets business skills. It talks to your [licensing service](../../../licensing-service/README.md), keeps a short-lived copy for outages, and fills the customer's settings in. Nothing from the customer's data is sent.
+The only way business skills reach the agent: through *Start task*, or the thin agent-tool wrapper below for notifications and policy questions. It talks to your [licensing service](../../../licensing-service/README.md), keeps a short-lived copy for outages, and fills the customer's settings in. Nothing from the customer's data is sent.
 
 ```text
-Trigger: When an agent calls the flow
+Trigger: Manually trigger a flow
   inputs: skillName (text; empty = return the catalogue of skills instead)
 
 1. Get environment variables: ica_TenantId, ica_BatchGroup, ica_BusinessHours,
@@ -119,7 +191,7 @@ Trigger: When an agent calls the flow
 6. If content contains '{{env:' → Respond: licensed = true, state = 'setting-missing',
      missingSettings = the names still in the text, content = ''      (stop)
 
-7. Respond to the agent:
+7. Respond:
      licensed = true, found = true, state, source ('live' | 'cache'), version,
      notice, content (skill text, or the catalogue JSON when skillName was empty)
 ```
@@ -129,6 +201,14 @@ Trigger: When an agent calls the flow
 - `cacheUntil` comes from the service and never goes past the licence's grace period, so the customer can't stretch the window.
 - Only this flow's connection can read `ica_skillcache`. No user security role includes it.
 - When you add a placeholder to a skill, add the environment variable and one more `replace()` in step 5. Step 6 stops the task until you do.
+
+## ICA - Load licensed skill (agent tool)
+
+```text
+Trigger: When an agent calls the flow   input: skillName
+1. Run child flow ICA - Load licensed skill (child) with skillName
+2. Respond to the agent with all its outputs
+```
 
 ## ICA - Wait
 `Delay` for min(seconds, 60) → Respond ok.
@@ -164,8 +244,8 @@ Recurrence: every 15 minutes
 2. For each:
    a. Fin & Ops: read batch job status for ica_batchjobid (and the inventory closing record
       for the run's period end date)
-   b. Ended + closing record Ended → ICA - Mark task completed (attemptKey = task.currentattemptkey)
-      → ICA - Record task audit (Succeeded, BatchCompleted, triggerSource = BatchWatcher)
+   b. Ended + closing record Ended → child ICA - Mark task completed (attemptKey = task.currentattemptkey)
+      → child ICA - Record task audit (Succeeded, BatchCompleted, triggerSource = BatchWatcher)
    c. Error → Mark task completed with targetStatus = InReview; Record task audit (Failed,
       BatchError); invoke agent "BlockedHandoff for task <taskId>"
    d. Still executing → nothing

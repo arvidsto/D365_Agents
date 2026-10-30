@@ -1,6 +1,7 @@
 ---
 name: InventoryClose_<YourProcedure>
 description: <One paragraph the agent reads first. What the procedure does, the exact task-name phrase it matches, which area corroborates it, what it excludes, and whether it is ReadOnly, DraftOnly, ApprovalRequired or PostAuthorized.>
+routing: <exact lowercase task-name phrase, the same as in the Routing contract; omit for supporting skills such as notifications>
 ---
 
 # <Procedure title>
@@ -19,6 +20,7 @@ description: <One paragraph the agent reads first. What the procedure does, the 
 Task **Name** must contain `<exact phrase>`. **Area = Inventory** corroborates only. Exclude: <task types this skill must never pick up>.
 
 ## Required data source
+- **Read only what the procedure needs:** select only the fields named in this skill, filter on the server (company, dates, status), and ask for at most the rows you will report (top 50). Never read full records or whole tables; every extra field is paid for in tokens at every later step.
 - **Dynamics 365 ERP MCP** (signed-in user). Name the entity or page. Confirm field names from metadata before querying; never guess.
 - If the source is unavailable or the read fails, report and stop. Never use cached results.
 

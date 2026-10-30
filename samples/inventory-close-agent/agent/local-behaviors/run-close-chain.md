@@ -14,11 +14,11 @@ description: Runs a close run end to end or continues after a completion. Execut
 
 ## Procedure
 1. Establish context (establish-close-context).
-2. Read the plan (retrieve-close-checklist Path P). Re-read before each task.
-3. Walk tasks in `ica_sequence` order, skipping Complete tasks:
-   - Agent-enabled **and** `#autostart` **and** gates pass → execute-close-task.
+2. Read the plan **once** (retrieve-close-checklist Path P, open tasks only). Don't re-read before each task: *ICA - Start task* reads the task fresh and applies the gates.
+3. Walk tasks in `ica_sequence` order:
+   - Agent-enabled **and** `#autostart` → execute-close-task with `chainRun = yes`.
      - ✅ → continue to the next task.
-     - ⏳ Submitted, ⚠️ or 🛑 → stop the chain.
+     - ⏳ Submitted, ⚠️, 🛑 or not started → stop the chain.
      - Blocked with `LicenceExpired` / `LicenceUnavailable` → stop the chain and send one `Escalation` to the controller: the remaining tasks need to be done manually until the licence is renewed.
    - Agent-enabled without `#autostart` → send `HumanStartHandoff` to its owner ("ready for you to start; set it to In progress to let the agent run it"), then stop.
    - Not agent-enabled → send `ManualHandoff` to its owner, then stop.

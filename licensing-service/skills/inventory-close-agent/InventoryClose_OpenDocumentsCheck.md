@@ -1,6 +1,7 @@
 ---
 name: InventoryClose_OpenDocumentsCheck
 description: Read-only check of physically updated but not financially updated documents up to the period end date — product receipts not yet invoiced and packing slips not yet invoiced — which inventory close will value at running average cost. Matches task names containing "open receipts and shipments". ReadOnly.
+routing: open receipts and shipments
 ---
 
 # Open receipts and shipments check
@@ -19,6 +20,7 @@ Lists purchase product receipts and sales packing slips dated on or before the p
 Task **Name** must contain `open receipts and shipments`. Area = Inventory corroborates only. Exclude: tasks that ask to post or invoice anything.
 
 ## Required data source
+- **Read only what the procedure needs:** select only the fields named in this skill, filter on the server (company, dates, status), and ask for at most the rows you will report (top 50). Never read full records or whole tables; every extra field is paid for in tokens at every later step.
 - Dynamics 365 ERP MCP data tools on purchase and sales line / receipt / packing slip entities that expose physical vs financial status. Confirm entity and field names from metadata first.
 
 ## Scope
