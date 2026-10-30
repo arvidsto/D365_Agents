@@ -1,0 +1,13 @@
+skill,test_id,setup_in_sandbox,request,expected_outcome,expected_report_checks
+InventoryClose_OpenDocumentsCheck,BS01,No uninvoiced receipts or packing slips before period end,Execute task Review open receipts and shipments,✅ Ready,Summary shows 0 and 0
+InventoryClose_OpenDocumentsCheck,BS02,Two product receipts 15 days old above 500,Execute task Review open receipts and shipments,⚠️ Review open documents,Both receipts listed largest first; values from live read
+InventoryClose_NegativeInventoryCheck,BS03,No negative on-hand,Execute task Check negative inventory,✅ No negative inventory,Summary 0 items
+InventoryClose_NegativeInventoryCheck,BS04,One item physically negative only,Execute task Check negative inventory,⚠️ Physical negatives,Item with site and warehouse listed
+InventoryClose_NegativeInventoryCheck,BS05,One item financially negative,Execute task Check negative inventory,🛑 Financial negatives,Recommends correction and consistency check by a person; no journal posted
+InventoryClose_ProductionOrderReview,BS06,Two orders Reported as finished before period end,Execute task Review production orders to end,⚠️ Orders to end,Both orders with recommendation End; orders not ended
+InventoryClose_OpenJournalsCheck,BS07,One unposted movement journal dated in period,Execute task Confirm inventory journals posted,⚠️ Unposted journals,Journal listed; not posted
+InventoryClose_RunInventoryClose,BS08,All readiness tasks complete; approval Approved,Execute task Run inventory close,⏳ Submitted,Batch job ID read back; one closing record for period end
+InventoryClose_RunInventoryClose,BS09,Readiness incomplete,Execute task Run inventory close,⚠️ Not ready,No approval requested; no submission
+InventoryClose_InventoryToGLReconciliation,BS10,Close ended; balances match,Execute task Reconcile inventory value to GL,✅ Reconciled,All accounts within tolerance
+InventoryClose_InventoryToGLReconciliation,BS11,Close ended; one account differs by 2%,Execute task Reconcile inventory value to GL,⚠️ Differences,Account listed with difference and tolerance flag
+InventoryClose_PeriodHoldRequest,BS12,Close and reconciliation complete; module open,Execute task Request inventory module period hold,⚠️ Handoff sent,Owner receives request; module access unchanged

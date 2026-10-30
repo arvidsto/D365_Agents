@@ -19,14 +19,15 @@ It is based on the patterns used in Microsoft's
 | [`docs/03-integration-patterns.md`](docs/03-integration-patterns.md) | Which way to connect to F&O, Business Central, CE apps / Dataverse, and when to use each (decision trees) | Solution architects, developers |
 | [`docs/04-fasttrack-agents-anatomy.md`](docs/04-fasttrack-agents-anatomy.md) | Breakdown of the Microsoft FastTrack agents: which building blocks each uses, and what we can reuse | Everyone; good starting point |
 | [`docs/05-governance-security-alm.md`](docs/05-governance-security-alm.md) | Security, responsible AI, licensing and credits, ALM and environments, monitoring | Architects, IT / CoE |
-| [`samples/credit-hold-review-agent/`](samples/credit-hold-review-agent/README.md) | **A complete sample agent**: reviews sales orders on credit hold in D365 Finance, combines ERP + CRM (Dataverse) context, recommends release or keep, gets approval, and logs everything | Builders: follow it in Copilot Studio |
+| [`samples/credit-hold-review-agent/`](samples/credit-hold-review-agent/README.md) | **Sample 1 — single-procedure agent**: reviews sales orders on credit hold in D365 Finance, combines ERP + CRM (Dataverse) context, recommends release or keep, gets approval, and logs everything. Modelled on the Sales Order Agent | Builders: start here |
+| [`samples/inventory-close-agent/`](samples/inventory-close-agent/README.md) | **Sample 2 — orchestration agent**: runs the month-end inventory close checklist in Supply Chain Management with local behaviors, business skills, an authorization gate, verified status changes, approval before the close, batch hand-over and an audit trail. Modelled on the Period Close Agent | Builders of complex, multi-step agents |
 | [`templates/agent-design-canvas.md`](templates/agent-design-canvas.md) | A one-page canvas to fill in for every new agent idea | Workshops with customers |
 | [`templates/new-agent-starter/`](templates/new-agent-starter/README.md) | Empty folder structure with placeholders, so every new agent is documented the same way | Builders |
 
 ## Quick start
 
 1. **Learn the pattern (15 min).** Read [the reference architecture](docs/01-reference-architecture.md) and [the FastTrack anatomy](docs/04-fasttrack-agents-anatomy.md).
-2. **See it applied (30 min).** Walk through the [Credit Hold Review Agent sample](samples/credit-hold-review-agent/README.md).
+2. **See it applied (30 min).** Walk through the [Credit Hold Review Agent sample](samples/credit-hold-review-agent/README.md), then the more advanced [Inventory Close Agent](samples/inventory-close-agent/README.md) when your process has many steps.
 3. **Shape your own idea (1 workshop).** Fill in the [agent design canvas](templates/agent-design-canvas.md) with the business owner.
 4. **Build it.** Copy [`templates/new-agent-starter/`](templates/new-agent-starter/README.md), then follow the [solution approach](docs/02-solution-approach.md) phase by phase.
 

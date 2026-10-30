@@ -65,6 +65,7 @@ Run a 2-hour workshop with the process owner and a user who does the work today.
 | **Conversational assistant** | A user in Teams / M365 Copilot / D365 | Compliance Advisor, Inventory Fulfillment | Good tool descriptions, knowledge, read-only by default, confirm writes |
 | **Autonomous (event-driven)** | An event or schedule | Sales Order, Period Close | Staging + status lifecycle, idempotency, human approval thresholds, notifications |
 | **Hybrid** | Both | Credit Hold Review (sample) | Same tools serve both entry points |
+| **Process orchestrator** | Checklist / task status + chat | Period Close, Inventory Close (sample) | Local behaviors vs business skills, authorization gate per task, verified status, claims, batch hand-over, evaluation sets |
 
 ### 2.2 Decide the autonomy level per action
 

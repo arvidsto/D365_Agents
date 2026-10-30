@@ -1,0 +1,9 @@
+ica_name,ica_sequence,ica_area,ica_owner,ica_duedate,ica_agentenabled,ica_dependson,ica_status
+Review open receipts and shipments #autostart,10,Inventory,inventory.controller@contoso.com,2026-10-29,Yes,,NotStarted
+Check negative inventory #autostart,20,Inventory,inventory.controller@contoso.com,2026-10-29,Yes,10,NotStarted
+Review production orders to end,30,Production,production.controller@contoso.com,2026-10-30,Yes,,NotStarted
+Confirm inventory journals posted #autostart,40,Inventory,inventory.controller@contoso.com,2026-10-30,Yes,"10,20",NotStarted
+Run inventory close,50,Inventory,cost.accountant@contoso.com,2026-11-02,Yes,"20,30,40",NotStarted
+Reconcile inventory value to GL #autostart,60,General ledger,cost.accountant@contoso.com,2026-11-03,Yes,50,NotStarted
+Request inventory module period hold,70,General ledger,gl.accountant@contoso.com,2026-11-04,Yes,60,NotStarted
+Sign off inventory close,80,Inventory,controller@contoso.com,2026-11-05,No,70,NotStarted

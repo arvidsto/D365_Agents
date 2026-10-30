@@ -59,13 +59,31 @@ action:
 | **Testing** | Manual testing with a sample PDF | **Evaluation sets** shipped with the solution | Ship tests with the agent. |
 | **Packaging** | Managed solution | Unmanaged + checksum + deployment-settings JSON | Use unmanaged for samples you expect customers to adapt; managed for products. |
 
-## 4. Reuse cheat sheet
+## 4. Deep dive: Period Close Agent (the orchestration pattern)
+
+We unpacked `PeriodCloseAgentV2_1_1_0_0_unmanaged.zip`. It is the most complete example of an agent that runs a whole business process rather than one procedure.
+
+| Solution component | Count | What it teaches |
+| --- | --- | --- |
+| **Local behaviors** (inline agent skills) | 13 | `establish-close-context`, `retrieve-close-plan`, `execute-period-close-task`, `run-close-task-chain`, `record-task-progression-audit`, `compose-and-send-close-email`, `resolve-close-recipients`, `produce-close-report`, `run-due-date-reminder-sweep`… Invariant mechanics owned by the developer. |
+| **Business skills** (Dataverse `skill` records, `PeriodClose_*`) | 13 | One per procedure (reconciliation, depreciation, IFRS 9/16 journals, FX revaluation, trial balance export…) plus wording/recipient/report policies. Owned by the finance business owner; changed without republishing. |
+| **MCP tools** | 5 | ERP MCP, ERP Analytics MCP, Dataverse MCP, Work IQ Mail, Work IQ SharePoint — all as the signed-in user |
+| **Agent flows** | 6 | Retrieve plan, Mark started, Mark completed, Record audit, Wait, Export trial balance |
+| **Event-triggered flows** | 2 | Human sets a task In progress → agent runs it; task completed → continue `#autostart` chain (Agents connector, preview) |
+| **Audit table + review app** | 1 + 1 | Claims and terminal rows with an attempt key; Compliance Review app |
+| **Evaluation** | 100 + templates | Two 50-case core sets, business-skill test templates, trace checklist |
+
+**Rules that make it safe** (reuse them in any orchestration agent): one authorization gate (`Agent enabled`), exact-record resolution (`TOP 2`), status written only by audited flows and proved by a fresh read, claims to stop double triggering, one governed email sender with recipients resolved from D365, a posting policy per skill (`DraftOnly` / `PostAuthorized`), batch hand-over for long jobs, and local rules always win over business skills.
+
+See this repo's [Inventory Close Agent](../samples/inventory-close-agent/README.md) for the same pattern applied to Supply Chain Management.
+
+## 5. Reuse cheat sheet
 
 | If your new agent needs to… | Copy the pattern from |
 | --- | --- |
 | Process documents that arrive by email | Sales Order Agent |
 | Answer questions over ERP data safely (read-only) | ERP Compliance Advisor |
-| Orchestrate a multi-step business process with governance | Period Close Agent |
+| Orchestrate a multi-step business process with governance | Period Close Agent → this repo's [Inventory Close Agent](../samples/inventory-close-agent/README.md) |
 | Help a user find something and act on it in chat | Inventory Fulfillment Agent |
 | Provision access with approvals | User Onboarding Agent |
 | Diagnose technical / operational issues | Batch Telemetry, Store Monitoring |
