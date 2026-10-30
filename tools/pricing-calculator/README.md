@@ -14,6 +14,8 @@ node --test tools/pricing-calculator/calc.test.js
 
 - **Views:** *Internal* shows your costs and margin; *Customer* hides them so you can share your screen in a meeting.
 - **Copy quote summary** puts customer-facing text on the clipboard for your proposal.
+- **Ranges:** Microsoft usage is shown as low / expected / high. The high case assumes twice the steps and, for reasoning models or the Microsoft Copilot harness, twice the tokens per step. Choose the model under **AI model & measured usage**.
+- **Measured values:** after a [consumption validation](../../docs/07-validating-copilot-consumption.md), enter credits per item, per scheduled run and per chat (the [analyzer](../consumption-analyzer/README.md) prints them). They replace the estimate and the range narrows to ±15%.
 - **Inputs** are saved in your browser only.
 - **To change defaults** (rates, tiers, sample agents), edit `DEFAULTS`, `DEFAULT_TIERS` or `PRESETS` in `calc.js` and run the tests.
 

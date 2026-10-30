@@ -24,7 +24,8 @@
       label: 'Credit Hold Review Agent',
       itemLabel: 'credit holds reviewed',
       itemsPerMonth: 300, legalEntities: 1,
-      perItem: { agentActions: 14, generativeAnswers: 1, flowActions: 120, promptKTokens: 3, promptTier: 'standard', reasoningKTokens: 0 },
+      perItem: { agentActions: 14, generativeAnswers: 1, flowActions: 120, promptKTokens: 3, promptTier: 'standard' },
+      model: { type: 'standard', kTokensPerAction: 2 },
       scheduled: { runsPerMonth: 440, agentActionsPerRun: 3, flowActionsPerRun: 15 },
       chat: { sessionsPerMonth: 40, agentActionsPerSession: 4, generativeAnswersPerSession: 3, usersHaveM365Copilot: false },
       value: { minutesSavedPerItem: 10, staffCostPerHourSgd: 55 }
@@ -33,7 +34,10 @@
       label: 'Inventory Close Agent',
       itemLabel: 'close tasks run',
       itemsPerMonth: 16, legalEntities: 2,
-      perItem: { agentActions: 20, generativeAnswers: 1, flowActions: 60, promptKTokens: 0, promptTier: 'standard', reasoningKTokens: 0 },
+      perItem: { agentActions: 20, generativeAnswers: 1, flowActions: 60, promptKTokens: 0, promptTier: 'standard' },
+      // Runs on the Microsoft Copilot harness, which bills model tokens, tools and the harness.
+      // Approximated as token-based; measure it before quoting.
+      model: { type: 'harness', kTokensPerAction: 2 },
       scheduled: { runsPerMonth: 22, agentActionsPerRun: 6, flowActionsPerRun: 10 },
       chat: { sessionsPerMonth: 30, agentActionsPerSession: 5, generativeAnswersPerSession: 3, usersHaveM365Copilot: false },
       value: { minutesSavedPerItem: 120, staffCostPerHourSgd: 70 }
@@ -53,30 +57,65 @@
     setup: { days: 6, dayRateSgd: 1500 },
     vendor: { supportHours: 1.5, monitoringHours: 0.5, maintenanceHours: 1, hourlyCostSgd: 90, azureShareSgd: 15, channelFeePct: 0 },
     customersOnAgent: 5,
-    gstPct: 9
+    gstPct: 9,
+    // Orchestration model. 'standard' = no token charge for orchestration.
+    // 'reasoning' and 'harness' add 10 credits per 1K tokens, estimated as tokens per agent action.
+    model: { type: 'standard', kTokensPerAction: 2 },
+    // How wide the low / high cases are around the expected estimate.
+    range: { lowFactor: 0.75, highStepFactor: 2, highTokenFactor: 2, measuredBand: 0.15 },
+    // Credits measured in a validation run (0 = not measured yet; use the estimate).
+    measured: { creditsPerItem: 0, creditsPerScheduledRun: 0, creditsPerChatSession: 0 }
   };
+
+  var CASES = ['low', 'expected', 'high'];
 
   function n(x) { var v = Number(x); return Number.isFinite(v) ? v : 0; }
 
-  function creditsPerItem(p) {
-    var tier = RATES.promptPer1kTokens[p.promptTier] != null ? p.promptTier : 'standard';
-    return n(p.agentActions) * RATES.agentAction +
-      n(p.generativeAnswers) * RATES.generativeAnswer +
-      n(p.flowActions) * RATES.flowActionsPer100 / 100 +
-      n(p.promptKTokens) * RATES.promptPer1kTokens[tier] +
-      n(p.reasoningKTokens) * RATES.reasoningPer1kTokens;
+  // Credits for orchestration tokens, charged per agent action when the model is token-billed.
+  function tokenCredits(agentActions, model, tokenFactor) {
+    if (!model || model.type === 'standard') return 0;
+    return n(agentActions) * n(model.kTokensPerAction) * (tokenFactor == null ? 1 : tokenFactor) * RATES.reasoningPer1kTokens;
   }
 
-  function microsoftCredits(s) {
-    var item = creditsPerItem(s.perItem);
+  // f = { step, token } multipliers for the low / high cases (1 / 1 = expected).
+  function creditsPerItem(p, model, f) {
+    f = f || { step: 1, token: 1 };
+    var tier = RATES.promptPer1kTokens[p.promptTier] != null ? p.promptTier : 'standard';
+    var actions = n(p.agentActions) * f.step;
+    return actions * RATES.agentAction +
+      n(p.generativeAnswers) * f.step * RATES.generativeAnswer +
+      n(p.flowActions) * f.step * RATES.flowActionsPer100 / 100 +
+      n(p.promptKTokens) * f.token * RATES.promptPer1kTokens[tier] +
+      tokenCredits(actions, model, f.token);
+  }
+
+  function factorsFor(s, c) {
+    var r = s.range;
+    if (c === 'low') return { step: n(r.lowFactor), token: n(r.lowFactor), band: 1 - n(r.measuredBand) };
+    if (c === 'high') return { step: n(r.highStepFactor), token: n(r.highTokenFactor), band: 1 + n(r.measuredBand) };
+    return { step: 1, token: 1, band: 1 };
+  }
+
+  function microsoftCredits(s, c) {
+    var f = factorsFor(s, c || 'expected'), m = s.measured, model = s.model;
+    var measuredItem = n(m.creditsPerItem) > 0;
+    var item = measuredItem ? n(m.creditsPerItem) * f.band : creditsPerItem(s.perItem, model, f);
     var items = item * n(s.itemsPerMonth);
-    var scheduled = n(s.scheduled.runsPerMonth) *
-      (n(s.scheduled.agentActionsPerRun) * RATES.agentAction + n(s.scheduled.flowActionsPerRun) * RATES.flowActionsPer100 / 100);
+    var runActions = n(s.scheduled.agentActionsPerRun) * f.step;
+    var perRun = n(m.creditsPerScheduledRun) > 0 ? n(m.creditsPerScheduledRun) * f.band :
+      runActions * RATES.agentAction + n(s.scheduled.flowActionsPerRun) * f.step * RATES.flowActionsPer100 / 100 + tokenCredits(runActions, model, f.token);
+    var scheduled = n(s.scheduled.runsPerMonth) * perRun;
     // Employee chat by users with a Microsoft 365 Copilot licence is not charged
     // (agent authenticated as that user). Autonomous triggers always are.
-    var chat = s.chat.usersHaveM365Copilot ? 0 : n(s.chat.sessionsPerMonth) *
-      (n(s.chat.agentActionsPerSession) * RATES.agentAction + n(s.chat.generativeAnswersPerSession) * RATES.generativeAnswer);
-    return { perItem: item, items: items, scheduled: scheduled, chat: chat, total: items + scheduled + chat };
+    var chatActions = n(s.chat.agentActionsPerSession) * f.step;
+    var perChat = n(m.creditsPerChatSession) > 0 ? n(m.creditsPerChatSession) * f.band :
+      chatActions * RATES.agentAction + n(s.chat.generativeAnswersPerSession) * f.step * RATES.generativeAnswer + tokenCredits(chatActions, model, f.token);
+    var chat = s.chat.usersHaveM365Copilot ? 0 : n(s.chat.sessionsPerMonth) * perChat;
+    return {
+      perItem: item, items: items, perScheduledRun: perRun, scheduled: scheduled, perChat: perChat, chat: chat,
+      total: items + scheduled + chat,
+      source: measuredItem ? 'measured' : 'estimated'
+    };
   }
 
   function microsoftCost(totalCredits, s) {
@@ -115,9 +154,17 @@
 
   function calculate(input) {
     var s = merge(DEFAULTS, input || {});
-    var credits = microsoftCredits(s);
+    var credits = microsoftCredits(s, 'expected');
     var ms = microsoftCost(credits.total, s);
     var sub = subscription(s);
+    var valueForRange = n(s.itemsPerMonth) * n(s.value.minutesSavedPerItem) / 60 * n(s.value.staffCostPerHourSgd);
+    var range = {};
+    CASES.forEach(function (c) {
+      var cr = c === 'expected' ? credits : microsoftCredits(s, c);
+      var cost = c === 'expected' ? ms : microsoftCost(cr.total, s);
+      var monthly = sub.monthlySgd + cost.bestSgd;
+      range[c] = { credits: cr.total, microsoftSgd: cost.bestSgd, plan: cost.bestPlan, customerMonthlySgd: monthly, roiMultiple: monthly ? valueForRange / monthly : 0 };
+    });
     var v = s.vendor;
     var hours = n(v.supportHours) + n(v.monitoringHours) + n(v.maintenanceHours);
     var vendorCost = hours * n(v.hourlyCostSgd) + n(v.azureShareSgd) + sub.monthlySgd * n(v.channelFeePct) / 100;
@@ -137,6 +184,12 @@
     if (customerMonthly > 0 && valueMonthly < customerMonthly) {
       warnings.push('The customer pays more per month than the time it saves them. Check the volume and minutes saved before proposing this agent.');
     }
+    if (range.high.roiMultiple < 1 && customerMonthly > 0 && valueMonthly >= customerMonthly) {
+      warnings.push('In the high case the customer would pay more than the time saved is worth. Measure consumption before quoting, and consider a standard (non-reasoning) model.');
+    }
+    if (credits.source === 'estimated' && s.model && s.model.type !== 'standard') {
+      warnings.push('This agent is billed for model tokens, which are hard to estimate. Treat the range as wide until you have measured a validation run.');
+    }
     if (sub.chosen.overItems > 0) {
       warnings.push(sub.chosen.overItems + ' items above the ' + sub.chosen.tier + ' allowance are charged as overage.');
     }
@@ -145,6 +198,7 @@
       settings: s,
       credits: credits,
       microsoft: ms,
+      range: range,
       subscription: sub,
       vendor: { hours: hours, costSgd: vendorCost, marginSgd: margin, marginPct: sub.monthlySgd ? margin / sub.monthlySgd * 100 : 0 },
       customer: {
@@ -181,7 +235,7 @@
     return merge(merge(DEFAULTS, p), overrides || {});
   }
 
-  var api = { RATES: RATES, DEFAULTS: DEFAULTS, PRESETS: PRESETS, calculate: calculate, fromPreset: fromPreset, creditsPerItem: creditsPerItem, merge: merge };
+  var api = { CASES: CASES, RATES: RATES, DEFAULTS: DEFAULTS, PRESETS: PRESETS, calculate: calculate, fromPreset: fromPreset, creditsPerItem: creditsPerItem, merge: merge };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.PricingCalc = api;
 })(typeof window !== 'undefined' ? window : this);

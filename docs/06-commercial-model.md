@@ -65,10 +65,10 @@ flowchart LR
 | | Monthly |
 | --- | --- |
 | Copilot credits: 92 per hold × 300 = 27,630; scheduled checks 7,458; chat 1,040 | **36,128 credits** |
-| Cheapest Microsoft plan: 1 pack (25,000) + pay-as-you-go for the rest | USD 311 ≈ **SGD 405** |
+| Cheapest Microsoft plan: 1 pack (25,000) + pay-as-you-go for the rest | USD 311 ≈ **SGD 405** (range SGD 290–780) |
 | Your subscription (Standard) | **SGD 800** |
-| **Customer pays in total** | **SGD 1,205** |
-| Value: 10 minutes saved per hold × 300 × SGD 55/hour | **SGD 2,750** (2.3× the monthly cost) |
+| **Customer pays in total** | **SGD 1,205** (range SGD 1,090–1,580) |
+| Value: 10 minutes saved per hold × 300 × SGD 55/hour | **SGD 2,750** (2.3× the monthly cost; 1.7× in the high case) |
 | Setup SGD 9,000 paid back in | **5.8 months** |
 | Your cost: 3 hours × SGD 90 + SGD 15 licensing service hosting (see below) | SGD 285 |
 | **Your margin** | **SGD 515 (64%)** |
@@ -81,15 +81,15 @@ At 1,500 holds a month, the calculator moves the customer to **Plus** (SGD 1,400
 
 | | Monthly |
 | --- | --- |
-| Copilot credits: 110 per task × 16 = 1,757; reminders 689; chat 930 | **3,375 credits** |
-| Microsoft (pay-as-you-go) | USD 34 ≈ **SGD 44** |
+| Copilot credits: about 510 per task × 16 = 8,157 (of which about 400 per task is model tokens on the Copilot harness); reminders 3,329; chat 3,930 | **15,415 credits** |
+| Microsoft (pay-as-you-go) | USD 154 ≈ **SGD 200** (range SGD 120–580) |
 | Your subscription: Standard SGD 800 + 1 extra company SGD 250 | **SGD 1,050** |
-| **Customer pays in total** | **SGD 1,094** |
-| Value: 2 hours saved per task × 16 × SGD 70/hour | **SGD 2,240** (2.0×) |
-| Setup paid back in | **7.9 months** |
+| **Customer pays in total** | **SGD 1,250** (range SGD 1,170–1,630) |
+| Value: 2 hours saved per task × 16 × SGD 70/hour | **SGD 2,240** (1.8×; 1.4× in the high case) |
+| Setup paid back in | **9.1 months** |
 | **Your margin** | **SGD 765 (73%)** |
 
-**Lesson:** this agent's Microsoft cost is small, so almost all of the customer's spend is your fee. Its value is mostly in a faster, controlled close, which the hours-saved figure understates. In the proposal, add the business value the controller cares about: days off the close, fewer adjustments after close, and audit evidence.
+**Lesson:** even in the high case your fee is most of what the customer pays. The Microsoft figure is the least certain in this doc because the harness bills model tokens, so measure it ([validation kit](07-validating-copilot-consumption.md)) before quoting. Its value is mostly in a faster, controlled close, which the hours-saved figure understates. In the proposal, add the business value the controller cares about: days off the close, fewer adjustments after close, and audit evidence.
 
 ### What "licensing service hosting" means in your cost
 
@@ -114,13 +114,14 @@ Copilot credits per month = (credits per item × items) + scheduled runs + chat.
 - **Pay-as-you-go:** about USD 0.01 per credit, billed to the customer's Azure subscription.
 - **Prepaid packs:** 25,000 credits a month for about USD 200. The calculator picks the cheapest mix.
 - **Microsoft 365 Copilot users:** chat by employees with a Microsoft 365 Copilot licence, using the agent under their own identity, isn't charged. Scheduled and event-triggered runs always are.
-- **Microsoft Copilot harness:** agents on this harness are billed differently. Check the [billing overview](https://learn.microsoft.com/microsoft-copilot-studio/agents-experience/billing-credit-overview) before quoting.
-- **Measure, don't guess:** before the customer signs, run 10 real items in a test environment and read the actual credits from the agent's **Monitor** page and the Power Platform admin center. Put the measured number in the calculator.
+- **Reasoning models and the Microsoft Copilot harness** are also billed for the text the model reads and writes (10 credits per 1,000 tokens). The calculator approximates this as tokens per agent action (2,000 by default). It's the least predictable part of the bill. See the [billing overview](https://learn.microsoft.com/microsoft-copilot-studio/agents-experience/billing-credit-overview).
+- **Ranges:** the calculator shows low, expected and high cases. The high case assumes twice the steps and, for token-billed models, twice the tokens per step. Quote the range until you have measured.
+- **Measure before a firm quote:** follow [07 — Validating Copilot consumption](07-validating-copilot-consumption.md). A few days of controlled runs in a validation environment give measured credits per item, per scheduled run and per chat. Enter them in the calculator and the range narrows to ±15%.
 
 ## 6. Pricing a new agent: the steps
 
 1. **Estimate value first:** items per month × minutes saved × loaded staff cost. If the value is less than about 2× the total monthly cost, the agent is hard to sell. Narrow its scope or pick another process.
-2. **Measure credits per item** in a test run, then add scheduled and chat usage.
+2. **Estimate, then measure credits**: quote the calculator's range at first; before a firm quote, run the [consumption validation](07-validating-copilot-consumption.md) and enter the measured figures.
 3. **Choose the tier** from the volume and number of legal entities. Let the calculator show which tier is cheapest for the customer, and quote that one, because customers notice.
 4. **Check your margin** using your real support hours. If you need more than 3 to 4 hours a month per agent, raise the price, automate the monthly report, or improve the agent.
 5. **Set the setup fee** from the days you actually need. Reused agents need fewer days; the first customer for a new agent usually needs more.

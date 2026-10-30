@@ -161,7 +161,7 @@ The orchestrator chooses tools by their **name + description + input description
 | **Evaluation set** | Decisions are correct across many cases | 20–50 real (anonymised) cases with expected outcome; measure accuracy before each release |
 | **Negative / safety tests** | Agent refuses out-of-scope and unsafe requests | Prompt-injection in emails/documents, requests to bypass approval, missing data |
 | **Security tests** | Least privilege works | Run as a user *without* the role; confirm denial |
-| **Volume & cost** | Credits per item are known | Measure credits per work item over a test batch |
+| **Volume & cost** | Credits per item are known | Run the [consumption validation](07-validating-copilot-consumption.md) and enter the measured credits in the pricing calculator |
 
 Release gate example: ≥ 95 % correct on the evaluation set, 0 unsafe actions, credits per item within budget.
 

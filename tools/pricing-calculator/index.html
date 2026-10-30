@@ -95,13 +95,18 @@ label.check input { margin-top: 3px; accent-color: var(--accent); }
 .seg-bar:first-child { border-radius: 4px 0 0 4px; }
 .seg-bar:last-child { border-radius: 0 4px 4px 0; }
 .seg-bar:only-child { border-radius: 4px; }
+.seg-bar.range, .legend i.hatch { background: repeating-linear-gradient(45deg, var(--ms) 0 2px, transparent 2px 6px); box-shadow: inset 0 0 0 1px var(--ms); }
+.legend i.hatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.cmp tr.exp td { font-weight: 600; }
 .barval { font-size: .82rem; color: var(--ink); font-variant-numeric: tabular-nums; padding-left: 102px; }
 .tip { position: fixed; z-index: 20; pointer-events: none; background: var(--ink); color: var(--paper); font-size: .8rem; padding: 6px 8px; border-radius: 3px; max-width: 240px; }
 
-.breakdown { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.breakdown { width: 100%; border-collapse: collapse; font-size: .88rem; table-layout: fixed; }
+.breakdown td { overflow-wrap: anywhere; }
+.breakdown tr:not(.group) td:last-child { width: 9.5em; }
 .breakdown td { padding: 5px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
 .breakdown td:last-child { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 12px; }
-.breakdown tr.group td { text-align: left; font-family: var(--mono); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding-top: 12px; border-bottom: 1px solid var(--ink); }
+.breakdown tr.group td { white-space: normal; text-align: left; font-family: var(--mono); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding-top: 12px; border-bottom: 1px solid var(--ink); }
 .breakdown tr.total td { font-weight: 600; }
 .cmp { width: 100%; border-collapse: collapse; font-size: .86rem; }
 .cmp th, .cmp td { padding: 5px 6px; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
@@ -173,7 +178,6 @@ footer a { color: var(--accent); }
               <option value="standard">Standard (1.5 / 1K)</option>
               <option value="premium">Premium (10 / 1K)</option>
             </select></label>
-          <label class="f">Reasoning-model tokens <span class="u">thousands</span><input type="number" id="rt" data-path="perItem.reasoningKTokens" min="0" step="1"></label>
         </div>
       </fieldset>
 
@@ -188,6 +192,29 @@ footer a { color: var(--accent); }
           <label class="f">Generative answers per chat<input type="number" id="chatGa" data-path="chat.generativeAnswersPerSession" min="0" step="1"></label>
         </div>
         <label class="check"><input type="checkbox" id="m365" data-path="chat.usersHaveM365Copilot"> Chat users have Microsoft 365 Copilot licences (their chat isn't charged; scheduled and event runs still are)</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>AI model &amp; measured usage</legend>
+        <p class="hint">Reasoning models and the Microsoft Copilot harness are also billed for the text the model reads and writes (10 credits per 1,000 tokens), which is the hardest part to estimate. Once you have run a validation, enter the measured credits: they replace the estimate and narrow the range.</p>
+        <div class="grid2">
+          <label class="f">Orchestration model
+            <select id="modelType" data-path="model.type">
+              <option value="standard">Standard model</option>
+              <option value="reasoning">Reasoning model</option>
+              <option value="harness">Microsoft Copilot harness</option>
+            </select></label>
+          <label class="f">Tokens per agent action <span class="u">thousands, token-billed models</span><input type="number" id="kTok" data-path="model.kTokensPerAction" min="0" step="0.5"></label>
+          <label class="f">Measured credits per item <span class="u">0 = not measured</span><input type="number" id="mItem" data-path="measured.creditsPerItem" min="0" step="1"></label>
+          <label class="f">Measured credits per scheduled run<input type="number" id="mRun" data-path="measured.creditsPerScheduledRun" min="0" step="0.5"></label>
+          <label class="f">Measured credits per chat<input type="number" id="mChat" data-path="measured.creditsPerChatSession" min="0" step="0.5"></label>
+        </div>
+        <div class="grid2">
+          <label class="f">Low case × <span class="u">steps and tokens</span><input type="number" id="rLow" data-path="range.lowFactor" min="0" step="0.05"></label>
+          <label class="f">High case: steps ×<input type="number" id="rHighS" data-path="range.highStepFactor" min="1" step="0.25"></label>
+          <label class="f">High case: tokens per step ×<input type="number" id="rHighT" data-path="range.highTokenFactor" min="1" step="0.25"></label>
+          <label class="f">Measured: range ± <span class="u">fraction</span><input type="number" id="rBand" data-path="range.measuredBand" min="0" max="1" step="0.05"></label>
+        </div>
       </fieldset>
 
       <fieldset>
@@ -263,6 +290,7 @@ footer a { color: var(--accent); }
           <div class="legend">
             <span><i style="background:var(--fee)"></i>Your subscription</span>
             <span><i style="background:var(--ms)"></i>Microsoft Copilot credits</span>
+            <span><i class="hatch"></i>Up to the high case</span>
             <span><i style="background:var(--value)"></i>Value of time saved</span>
           </div>
           <div class="barrow"><span class="lab">Monthly cost</span><div class="track" id="costTrack"></div></div>
@@ -270,6 +298,14 @@ footer a { color: var(--accent); }
           <div class="barrow"><span class="lab">Monthly value</span><div class="track" id="valueTrack"></div></div>
           <div class="barval" id="valueVal"></div>
         </div>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;justify-content:space-between">
+          <h2>Microsoft usage range</h2><span class="chip" id="srcChip">estimated</span>
+        </div>
+        <div style="overflow-x:auto"><table class="cmp" id="rangeTbl"></table></div>
+        <p class="hint" id="rangeHint"></p>
       </div>
 
       <div class="panel">
@@ -295,7 +331,7 @@ footer a { color: var(--accent); }
   </div>
 
   <footer>
-    <p>Copilot credit rates from Microsoft's <a href="https://learn.microsoft.com/microsoft-copilot-studio/requirements-messages-management">Copilot Studio billing rates</a> (checked October 2026): agent action 5, generative answer 2, agent flow actions 13 per 100, prompts 0.1 / 1.5 / 10 credits per 1K tokens, pay-as-you-go USD 0.01 per credit. Agents on the Microsoft Copilot harness are billed differently; check before quoting.</p>
+    <p>Copilot credit rates from Microsoft's <a href="https://learn.microsoft.com/microsoft-copilot-studio/requirements-messages-management">Copilot Studio billing rates</a> (checked October 2026): agent action 5, generative answer 2, agent flow actions 13 per 100, prompts 0.1 / 1.5 / 10 credits per 1K tokens, pay-as-you-go USD 0.01 per credit. Agents on the Microsoft Copilot harness are billed for model tokens, tools and the harness; this calculator approximates that from tokens per step. Measure with the <a href="https://github.com/arvidsto/D365_Agents/blob/main/docs/07-validating-copilot-consumption.md">consumption validation kit</a> before quoting.</p>
     <p>Sample agent numbers are estimates for planning, not measurements. Measure credits per item in a test run before you quote. Prices exclude GST (9%). D365 and Microsoft 365 licences are paid by the customer and not included. Exchange rate is an input, not live.</p>
     <p>Your inputs are kept in this browser only.</p>
   </footer>
@@ -306,7 +342,7 @@ footer a { color: var(--accent); }
 (function () {
   'use strict';
   var C = window.PricingCalc;
-  var STORE = 'agent-pricing-calculator-v1';
+  var STORE = 'agent-pricing-calculator-v2';
   var state, preset = 'credit-hold', view = 'vendor';
 
   var sgdNum = new Intl.NumberFormat('en-SG', { maximumFractionDigits: 0 });
@@ -382,12 +418,12 @@ footer a { color: var(--accent); }
     parts.forEach(function (p) {
       if (p.v <= 0) return;
       var s = document.createElement('div');
-      s.className = 'seg-bar';
-      s.style.background = p.color;
+      s.className = 'seg-bar' + (p.cls ? ' ' + p.cls : '');
+      if (p.color) s.style.background = p.color;
       s.style.flex = '0 0 ' + (scale > 0 ? (p.v / scale * 100) : 0) + '%';
       s.setAttribute('role', 'img');
       s.setAttribute('aria-label', p.label + ': ' + sgd.format(p.v));
-      bindTip(s, p.label + ': ' + sgd.format(p.v) + ' per month');
+      bindTip(s, p.tip || (p.label + ': ' + sgd.format(p.v) + ' per month'));
       track.appendChild(s);
     });
   }
@@ -398,10 +434,28 @@ footer a { color: var(--accent); }
     var sub = r.subscription, ms = r.microsoft, cu = r.customer, v = r.vendor, cr = r.credits;
 
     text('rCustomer', sgd.format(cu.monthlySgd));
-    text('rCustomerSub', sgd.format(sub.monthlySgd) + ' you + ' + sgd.format(ms.bestSgd) + ' Microsoft');
+    var rg = r.range;
+    text('rCustomerSub', sgd.format(sub.monthlySgd) + ' you + ' + sgd.format(ms.bestSgd) + ' Microsoft · range ' + sgd.format(rg.low.customerMonthlySgd) + '–' + sgd.format(rg.high.customerMonthlySgd));
     text('rValue', sgd.format(cu.valueMonthlySgd));
     text('rValueSub', dec1.format(state.itemsPerMonth * state.value.minutesSavedPerItem / 60) + ' hours saved');
     text('rRoi', cu.roiMultiple ? dec1.format(cu.roiMultiple) + '×' : '–');
+    // range table
+    var rt = document.getElementById('rangeTbl');
+    rt.innerHTML = '<thead><tr><th></th><th>Low</th><th>Expected</th><th>High</th></tr></thead>';
+    var rb = document.createElement('tbody');
+    [['Copilot credits / month', function (x) { return int.format(x.credits); }],
+     ['Microsoft cost / month', function (x) { return sgd.format(x.microsoftSgd); }],
+     ['Customer pays / month', function (x) { return sgd.format(x.customerMonthlySgd); }],
+     ['Value ÷ cost', function (x) { return dec1.format(x.roiMultiple) + '×'; }]].forEach(function (row, i) {
+      var tr = document.createElement('tr'); if (i === 2) tr.className = 'exp';
+      addTd(tr, row[0]); C.CASES.forEach(function (c) { addTd(tr, row[1](rg[c])); }); rb.appendChild(tr);
+    });
+    rt.appendChild(rb);
+    var measured = cr.source === 'measured';
+    text('srcChip', measured ? 'measured' : 'estimated');
+    text('rangeHint', measured
+      ? 'Based on your measured credits, ± ' + Math.round(state.range.measuredBand * 100) + '%.'
+      : 'Estimated from steps per item' + (state.model.type === 'standard' ? '' : ' and tokens per step') + '. The high case assumes ' + state.range.highStepFactor + '× the steps' + (state.model.type === 'standard' ? '' : ' and ' + state.range.highTokenFactor + '× the tokens per step') + '. Measure a validation run to narrow it.');
     text('rRoiSub', (cu.netMonthlySgd >= 0 ? sgd.format(cu.netMonthlySgd) + ' net gain' : sgd.format(-cu.netMonthlySgd) + ' net cost') + ' per month');
     text('rPayback', cu.paybackMonths == null ? 'Never' : dec1.format(cu.paybackMonths) + ' mo');
     text('rPaybackSub', 'Setup ' + sgd.format(cu.setupFeeSgd) + ' · year 1 ' + sgd.format(cu.yearOneSgd));
@@ -410,13 +464,14 @@ footer a { color: var(--accent); }
     text('rArr', sgd.format(r.portfolio.arrSgd));
     text('rArrSub', int.format(state.customersOnAgent) + ' customers · year-1 margin ' + sgd.format(r.portfolio.yearOneMarginSgd));
 
-    var scale = Math.max(cu.monthlySgd, cu.valueMonthlySgd, 1);
+    var scale = Math.max(rg.high.customerMonthlySgd, cu.valueMonthlySgd, 1);
     bar(document.getElementById('costTrack'), [
       { v: sub.monthlySgd, color: 'var(--fee)', label: 'Your subscription' },
-      { v: ms.bestSgd, color: 'var(--ms)', label: 'Microsoft Copilot credits' }
+      { v: ms.bestSgd, color: 'var(--ms)', label: 'Microsoft Copilot credits (expected)' },
+      { v: rg.high.microsoftSgd - ms.bestSgd, cls: 'range', label: 'Extra Microsoft cost in the high case', tip: 'High case: Microsoft ' + sgd.format(rg.high.microsoftSgd) + ', total ' + sgd.format(rg.high.customerMonthlySgd) + ' per month' }
     ], scale);
     bar(document.getElementById('valueTrack'), [{ v: cu.valueMonthlySgd, color: 'var(--value)', label: 'Value of time saved' }], scale);
-    text('costVal', sgd.format(sub.monthlySgd) + ' subscription + ' + sgd.format(ms.bestSgd) + ' credits = ' + sgd.format(cu.monthlySgd));
+    text('costVal', sgd.format(sub.monthlySgd) + ' subscription + ' + sgd.format(ms.bestSgd) + ' credits = ' + sgd.format(cu.monthlySgd) + ' (high case ' + sgd.format(rg.high.customerMonthlySgd) + ')');
     text('valueVal', sgd.format(cu.valueMonthlySgd) + ' of staff time');
 
     var c = sub.chosen, rows = [];
@@ -427,12 +482,13 @@ footer a { color: var(--accent); }
     if (sub.discountPct) rows.push(['', 'Annual prepay discount ' + sub.discountPct + '%', '−' + sgd.format(c.total - sub.monthlySgd)]);
     rows.push(['total', 'Subscription per month', sgd.format(sub.monthlySgd)]);
     rows.push(['group', 'Microsoft Copilot credits (customer pays Microsoft)']);
-    rows.push(['', 'Per item: ' + dec1.format(cr.perItem) + ' credits × ' + int.format(state.itemsPerMonth), int.format(cr.items)]);
-    rows.push(['', 'Scheduled runs', int.format(cr.scheduled)]);
+    rows.push(['', (cr.source === 'measured' ? 'Measured per item: ' : 'Per item: ') + dec1.format(cr.perItem) + ' credits × ' + int.format(state.itemsPerMonth), int.format(cr.items)]);
+    rows.push(['', 'Scheduled runs: ' + dec1.format(cr.perScheduledRun) + ' × ' + int.format(state.scheduled.runsPerMonth), int.format(cr.scheduled)]);
     rows.push(['', state.chat.usersHaveM365Copilot ? 'Chat (Microsoft 365 Copilot users: not charged)' : 'Chat', int.format(cr.chat)]);
     rows.push(['', 'Credits per month', int.format(cr.total)]);
     rows.push(['', 'Cheapest plan: ' + ms.bestPlan, usd.format(ms.bestUsd)]);
-    rows.push(['total', 'Credits per month in SGD', sgd.format(ms.bestSgd)]);
+    rows.push(['total', 'Credits per month in SGD (expected)', sgd.format(ms.bestSgd)]);
+    rows.push(['', 'Range (low – high)', sgd.format(rg.low.microsoftSgd) + ' – ' + sgd.format(rg.high.microsoftSgd)]);
     if (view === 'vendor') {
       rows.push(['group', 'Your cost (internal)']);
       rows.push(['', dec1.format(v.hours) + ' hours × ' + sgd.format(state.vendor.hourlyCostSgd), sgd.format(v.hours * state.vendor.hourlyCostSgd)]);
@@ -483,10 +539,10 @@ footer a { color: var(--accent); }
       'Subscription: ' + c.tier + ' tier, ' + sgd.format(r.subscription.monthlySgd) + ' per month' + (r.subscription.discountPct ? ' (annual prepaid, ' + r.subscription.discountPct + '% discount)' : '') +
         ' — includes ' + int.format(s.tiers[s.tiers.findIndex(function (t) { return t.name === c.tier; })].includedItems) + ' items per month' + (c.overItems ? '; ' + int.format(c.overItems) + ' extra items charged ' + sgd.format(c.overage) : '') + (c.entityAddOn ? '; ' + c.overEntities + ' extra legal entities ' + sgd.format(c.entityAddOn) : '') + '.',
       'One-off setup: ' + sgd.format(r.customer.setupFeeSgd) + ' (' + s.setup.days + ' days).',
-      'Microsoft Copilot credits (paid to Microsoft): about ' + int.format(r.credits.total) + ' credits per month, ' + sgd.format(r.microsoft.bestSgd) + ' (' + r.microsoft.bestPlan + ').',
-      'Estimated total per month: ' + sgd.format(r.customer.monthlySgd) + '.',
+      'Microsoft Copilot credits (paid to Microsoft): ' + (r.credits.source === 'measured' ? 'measured in validation, ' : 'estimated, ') + sgd.format(r.range.low.microsoftSgd) + '–' + sgd.format(r.range.high.microsoftSgd) + ' per month (expected about ' + sgd.format(r.microsoft.bestSgd) + ', ' + int.format(r.credits.total) + ' credits).',
+      'Estimated total per month: ' + sgd.format(r.range.low.customerMonthlySgd) + '–' + sgd.format(r.range.high.customerMonthlySgd) + ' (expected ' + sgd.format(r.customer.monthlySgd) + ').',
       'Estimated value: ' + dec1.format(s.itemsPerMonth * s.value.minutesSavedPerItem / 60) + ' hours saved per month, worth ' + sgd.format(r.customer.valueMonthlySgd) + ' (' + dec1.format(r.customer.roiMultiple) + '× the monthly cost)' + (r.customer.paybackMonths != null ? '; setup paid back in about ' + dec1.format(r.customer.paybackMonths) + ' months.' : '.'),
-      'Estimates: credits are confirmed in a test run before go-live. D365 and Microsoft 365 licences are not included.'
+      (r.credits.source === 'measured' ? 'Microsoft usage is based on a measured validation run.' : 'Microsoft usage is an estimate; we measure it in a validation run before you commit, and you can cap it with a monthly limit per agent.') + ' D365 and Microsoft 365 licences are not included.'
     ].join('\n');
   }
   document.getElementById('copyQuote').addEventListener('click', function () {

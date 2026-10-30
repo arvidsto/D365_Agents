@@ -185,6 +185,7 @@ Follow the [solution approach](../../docs/02-solution-approach.md#phase-3--build
 
 ### Step 5 — Test, then publish
 16. Run the [evaluation set](evaluation/README.md). Release gate: all *safety* cases pass, ≥ 90 % correct recommendations.
+16a. **Validate Copilot consumption** with the [consumption test plan](evaluation/consumption-test-plan.md) in a separate validation environment, and put the measured credits in the pricing calculator before you give the customer a firm Microsoft cost.
 17. Publish; add channel **Teams and Microsoft 365 Copilot**; share with credit managers.
 18. Run in **shadow mode** for two weeks (env variable `chr_ApprovalMode = ShadowOnly`): the agent prepares cases and recommendations, managers decide as usual, and you compare.
 

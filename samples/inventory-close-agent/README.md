@@ -225,6 +225,7 @@ sequenceDiagram
 6. **Tools.** Add ERP MCP, Dataverse MCP and Work IQ Mail; switch off the tools listed in [`agent/tools.md`](agent/tools.md). Add the agent flows as tools.
 7. **Event & scheduled flows.** Build the four flows; leave them **off** until validation passes.
 8. **Validate.** Run both core test sets and the business-skill tests in [`evaluation/`](evaluation/), human-review every response, complete the trace checklist.
+8a. **Validate Copilot consumption.** Run the [consumption test plan](evaluation/consumption-test-plan.md) in a separate validation environment. This agent's harness bills model tokens, so its estimate is the least certain; measure before quoting.
 9. **Release.** Restrict access to the security group, publish to Teams and Microsoft 365 Copilot, turn on *Run human-started task*; turn on *Auto-run next* when the team is ready.
 
 ## 7. Safety model at a glance

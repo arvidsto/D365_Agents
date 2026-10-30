@@ -1,0 +1,5 @@
+date,agent,scenario,items,scheduledRuns,chatSessions,notes
+2026-11-03,Credit Hold Review Agent,scheduled,0,20,0,Idle day: recurrence only (business hours) - no new holds
+2026-11-04,Credit Hold Review Agent,chat,0,0,15,Chat script from evaluation/test-cases.csv run by a non-Copilot-licensed tester
+2026-11-05,Credit Hold Review Agent,items,20,20,0,20 holds created in USMF this morning; recurrence still running
+2026-11-06,Credit Hold Review Agent,items,25,20,0,Second item day to check variation

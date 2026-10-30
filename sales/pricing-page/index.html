@@ -177,7 +177,7 @@ a { color: var(--accent); }
   <div class="head">
     <div class="eyebrow">Examples</div>
     <h2>What a typical month costs, all in</h2>
-    <p>Indicative figures for two agents, including the Microsoft usage you pay directly. We confirm your actual Microsoft usage in the test step, before you commit.</p>
+    <p>Indicative figures for two agents, including the Microsoft usage you pay directly. Microsoft usage is shown as a range until we measure it on your data in a validation run, before you commit.</p>
   </div>
   <div class="examples">
     <div class="ex">
@@ -185,8 +185,8 @@ a { color: var(--accent); }
       <p>Reviews sales orders on credit hold in D365 Finance, gathers credit and customer information, recommends release or keep with reasons, and asks your credit manager to approve. Example: 300 holds a month, one company.</p>
       <table class="ledger">
         <tr><td>Standard plan <span class="tag us">to us</span></td><td>S$800</td></tr>
-        <tr><td>Copilot credits, about 36,000 <span class="tag ms">to Microsoft</span></td><td>about S$405</td></tr>
-        <tr class="total"><td>Total per month</td><td>about S$1,205</td></tr>
+        <tr><td>Copilot credits, 27,000–72,000 <span class="tag ms">to Microsoft</span></td><td>S$290–780</td></tr>
+        <tr class="total"><td>Total per month</td><td>S$1,090–1,580</td></tr>
         <tr class="value"><td>Credit team time saved (50 hours)</td><td>about S$2,750</td></tr>
       </table>
     </div>
@@ -195,13 +195,13 @@ a { color: var(--accent); }
       <p>Runs the month-end inventory close checklist in D365 Supply Chain Management: readiness checks, the close itself after your cost accountant approves, and the reconciliation to the ledger. Example: two companies, 16 close tasks a month.</p>
       <table class="ledger">
         <tr><td>Standard plan + 1 extra company <span class="tag us">to us</span></td><td>S$1,050</td></tr>
-        <tr><td>Copilot credits, about 3,400 <span class="tag ms">to Microsoft</span></td><td>about S$44</td></tr>
-        <tr class="total"><td>Total per month</td><td>about S$1,094</td></tr>
+        <tr><td>Copilot credits, 9,000–55,000 <span class="tag ms">to Microsoft</span></td><td>S$120–580</td></tr>
+        <tr class="total"><td>Total per month</td><td>S$1,170–1,630</td></tr>
         <tr class="value"><td>Finance team time saved (32 hours)</td><td>about S$2,240</td></tr>
       </table>
     </div>
   </div>
-  <p class="muted" style="font-size:.9rem;color:var(--muted)">Time saved is valued at S$55 (credit team) and S$70 (finance team) per hour. Your figures will differ; we use yours in the proposal.</p>
+  <p class="muted" style="font-size:.9rem;color:var(--muted)">Ranges run from a lean case to a heavy one (twice the steps, and for AI models billed by text processed, twice the text per step). Most agents land near the lower half; the validation run tells us where yours does. Time saved is valued at S$55 (credit team) and S$70 (finance team) per hour. Your figures will differ; we use yours in the proposal.</p>
 </section>
 
 <section>
@@ -217,10 +217,12 @@ a { color: var(--accent); }
         <tr><td>Takes a step: starts, calls a tool, reads Dynamics 365</td><td>5 each</td><td>Reading a customer's credit limit</td></tr>
         <tr><td>Writes an answer</td><td>2 each</td><td>Replying to a question in Teams</td></tr>
         <tr><td>Runs a fixed workflow</td><td>13 per 100 actions</td><td>Saving a decision and sending an email</td></tr>
-        <tr><td>Uses an AI prompt</td><td>0.1 to 10 per 1,000 words processed</td><td>Drafting a recommendation</td></tr>
+        <tr><td>Uses an AI prompt</td><td>0.1 to 10 per 1,000 tokens (about 750 words)</td><td>Drafting a recommendation</td></tr>
+        <tr><td>Thinks with a reasoning model or the newer Copilot agent engine</td><td>10 per 1,000 tokens read and written</td><td>Re-reading its instructions and results at each step</td></tr>
       </tbody>
     </table>
   </div>
+  <p class="note"><strong>How we pin it down.</strong> Before you commit, we run the agent on 40–50 of your own cases for a few days in a separate test environment, read the exact credits from Microsoft's consumption report, and replace the range with the measured figure. Your administrator can also set a monthly credit limit for each agent, so it can never exceed the budget you agree.</p>
   <p class="note"><strong>We design to keep this low.</strong> For example, starting the Credit Hold agent when Dynamics 365 raises an event, instead of checking every 30 minutes, cuts its Microsoft cost by about a quarter. Rates from Microsoft's published Copilot Studio billing rates, October 2026; Microsoft may change them.</p>
 </section>
 
