@@ -1,0 +1,67 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.4",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "Credit hold review: ${salesOrderNumber} (${companyCode})",
+      "weight": "Bolder",
+      "size": "Medium",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Agent recommendation: **${recommendation}** (confidence ${confidence})",
+      "wrap": true
+    },
+    {
+      "type": "FactSet",
+      "facts": [
+        { "title": "Customer", "value": "${customerAccount}" },
+        { "title": "Blocking reason", "value": "${blockingReason}" },
+        { "title": "Order amount", "value": "${orderAmount} ${currency}" },
+        { "title": "Credit limit", "value": "${creditLimit} ${currency}" },
+        { "title": "Balance", "value": "${balance} ${currency}" },
+        { "title": "Oldest overdue", "value": "${oldestOverdueDays} days" },
+        { "title": "Account owner", "value": "${accountOwner}" }
+      ]
+    },
+    {
+      "type": "TextBlock",
+      "text": "Reasons",
+      "weight": "Bolder",
+      "spacing": "Medium"
+    },
+    {
+      "type": "TextBlock",
+      "text": "${reasons}",
+      "wrap": true
+    },
+    {
+      "type": "Input.Text",
+      "id": "comment",
+      "placeholder": "Comment (required when you disagree with the recommendation)",
+      "isMultiline": true
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Approve release",
+      "style": "positive",
+      "data": { "decision": "approve", "reviewId": "${reviewId}" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Keep on hold",
+      "style": "destructive",
+      "data": { "decision": "reject", "reviewId": "${reviewId}" }
+    },
+    {
+      "type": "Action.OpenUrl",
+      "title": "Open review record",
+      "url": "${reviewAppUrl}"
+    }
+  ]
+}
