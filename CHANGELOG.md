@@ -2,16 +2,16 @@
 
 What changed in this kit, why, and how to go back. Newest first. Every design change that affects what a customer pays or how an agent behaves gets an entry here, with its trade-offs and the steps to revert it.
 
-| Version | Date | Git tag | In one line |
+| Version | Date | Commit | In one line |
 | --- | --- | --- | --- |
-| [2.0 — Lean design](#20--lean-design-2026-10-30) | 2026-10-30 | `design-v2-lean` | Flows do the fetching, the agent does the judgement. Microsoft cost about 40–50% lower |
-| [1.x — Flexible design](#1x--flexible-design-up-to-2026-10-30) | up to 2026-10-30 | `design-v1-flexible` | The agent polls, looks up each fact itself and runs every step as a tool call |
+| [2.0 — Lean design](#20--lean-design-2026-10-30) | 2026-10-30 | `070862f` | Flows do the fetching, the agent does the judgement. Microsoft cost about 40–50% lower |
+| [1.x — Flexible design](#1x--flexible-design-up-to-2026-10-30) | up to 2026-10-30 | `3e76ade` | The agent polls, looks up each fact itself and runs every step as a tool call |
 
 ---
 
 ## 2.0 — Lean design (2026-10-30)
 
-Commit `070862f`, tag `design-v2-lean`.
+Commit `070862f` (suggested tag `design-v2-lean`).
 
 ### What changed
 
@@ -64,10 +64,10 @@ Your subscription fee and margin don't change. These are estimates until measure
 
 Each agent's design lives in its own sample folder, so you can revert one agent without touching the other. The licensing service stays on 2.0 in both cases: its extra `routing` field is ignored by 1.x agents.
 
-1. Restore the agent's folder from the 1.x tag (on a new branch):
+1. Restore the agent's folder from the last 1.x commit, `3e76ade`, on a new branch:
 
    ```bash
-   git fetch origin --tags
+   git fetch origin
    ```
 
    ```bash
@@ -75,7 +75,7 @@ Each agent's design lives in its own sample folder, so you can revert one agent 
    ```
 
    ```bash
-   git checkout design-v1-flexible -- samples/credit-hold-review-agent
+   git checkout 3e76ade -- samples/credit-hold-review-agent
    ```
 
    For the Inventory Close Agent, use `samples/inventory-close-agent` instead.
@@ -92,14 +92,36 @@ Each agent's design lives in its own sample folder, so you can revert one agent 
 To compare the two designs file by file:
 
 ```bash
-git diff design-v1-flexible design-v2-lean -- samples/
+git diff 3e76ade 070862f -- samples/
 ```
+
+### Keep the old design reachable
+
+The commit IDs above live on the pull request branch. If the pull request is squash-merged and the branch deleted, they can disappear, so create the two tags from your own machine once (tags keep the commits forever):
+
+```bash
+git fetch origin claude/amazing-maxwell-7gkim0
+```
+
+```bash
+git tag -a design-v1-flexible 3e76ade -m "Flexible agent design"
+```
+
+```bash
+git tag -a design-v2-lean 070862f -m "Lean agent design"
+```
+
+```bash
+git push origin design-v1-flexible design-v2-lean
+```
+
+After that you can use the tag names instead of the commit IDs in every command above.
 
 ---
 
 ## 1.x — Flexible design (up to 2026-10-30)
 
-Tag `design-v1-flexible` (commit `3e76ade`). Earlier commits, in order:
+Last commit `3e76ade` (suggested tag `design-v1-flexible`). Earlier commits, in order:
 
 | Commit | Change |
 | --- | --- |
