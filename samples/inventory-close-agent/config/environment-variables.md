@@ -11,7 +11,18 @@
 | `ica_LicenceKey` | **Secret** (Azure Key Vault) | – | Licence key you issue; used by the Licensed Skills connection |
 | `ica_TenantId` | Text | – | Customer's Microsoft Entra tenant ID, sent so the licence only works in this tenant |
 
-Business-skill placeholders `{{BATCH_GROUP}}` (RunInventoryClose) and `{{INVENTORY_ACCOUNTS}}` (InventoryToGLReconciliation) are set per customer in the licensing service. For per-customer values, either keep one skill version per customer or move the values to environment variables and have the skill tell the agent to read them.
+### Customer settings used by the licensed skills
+
+These fill the `{{env:…}}` placeholders in the skills inside this tenant, so the values never go to the licensing service.
+
+| Schema name | Type | Example | Used by |
+| --- | --- | --- | --- |
+| `ica_BatchGroup` | Text | `INVCLOSE` | `InventoryClose_RunInventoryClose` — batch group for the inventory close job |
+| `ica_BusinessHours` | Text | `07:00–19:00` | `InventoryClose_RunInventoryClose` — window to avoid when starting the close (company time) |
+| `ica_InventoryMainAccounts` | Text | `140100, 140150, 140200` | `InventoryClose_InventoryToGLReconciliation` — inventory main accounts to reconcile |
+
+If a skill uses a setting that is empty or missing, *ICA - Load licensed skill* stops the task with `SettingMissing` instead of running it with a blank value.
+
 
 | Connection reference | Connector | Used by |
 | --- | --- | --- |
@@ -22,4 +33,4 @@ Business-skill placeholders `{{BATCH_GROUP}}` (RunInventoryClose) and `{{INVENTO
 | `ica_Teams` | Microsoft Teams | ICA - Request approval |
 | `ica_FinOps` | Fin & Ops Apps (Dynamics 365) | Batch completion watcher (read only) |
 | `ica_Agents` | Agents (preview) | Event and scheduled flows |
-| `ica_LicensedSkills` | Licensed Agent Skills (custom connector, MCP) | Agent tool; API key = `ica_LicenceKey` |
+| `ica_LicensedSkills` | Licensed Agent Skills (custom connector, REST) | *ICA - Load licensed skill*; API key = `ica_LicenceKey` |

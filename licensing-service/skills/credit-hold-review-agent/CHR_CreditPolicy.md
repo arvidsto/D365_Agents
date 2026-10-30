@@ -5,10 +5,10 @@ description: Business policy for recommending whether a sales order on credit ho
 
 # Credit policy
 
-> **Owned by the credit manager.** Thresholds in `{…}` come from the customer's environment variables so each company can tune them.
+> **Owned by the credit manager.** Values written as `{{env:…}}` are filled in inside the customer's tenant from its environment variables, so each company can tune them and the values never reach the licensing service.
 
 ## Recommend RELEASE when ALL are true
-- Oldest overdue invoice is at most `{chr_MaxOverdueDaysForRelease}` days (default 15).
+- Oldest overdue invoice is at most `{{env:chr_MaxOverdueDaysForRelease}}` days (default 15).
 - Balance + order amount is at most 110% of the credit limit.
 - No open CRM case flagged as dispute or complaint.
 - Customer has paid at least once in the last 90 days.
@@ -22,10 +22,10 @@ description: Business policy for recommending whether a sales order on credit ho
 Otherwise recommend **REVIEW** and explain what information is missing.
 
 ## Strategic customer adjustment
-If the open opportunity value in CRM is above `{chr_StrategicOpportunityValue}` (default 250,000 in company currency), say so in the reasons, but do **not** change the recommendation on that basis alone.
+If the open opportunity value in CRM is above `{{env:chr_StrategicOpportunityValue}}` (default 250,000 in company currency), say so in the reasons, but do **not** change the recommendation on that basis alone.
 
 ## Always send to a person (routeTo = ManualReview) when
-- Order amount is above `{chr_AlwaysHumanOrderAmount}` (default 100,000).
+- Order amount is above `{{env:chr_AlwaysHumanOrderAmount}}` (default 100,000).
 - Any required fact is null.
 - The customer is intercompany.
 

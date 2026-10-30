@@ -23,11 +23,14 @@ Check in this order; the first failing gate stops the task and goes to Step 6 wi
 
 ## Step 2 — Route to exactly one licensed business skill
 This step happens **before** any status change, so a licence problem never leaves a task half started.
-1. Call **Licensed Skills `list_skills`**. If `licensed = false` or the call fails: record **Blocked** with code `LicenceExpired` (or `LicenceUnavailable` when the service can't be reached), send `ManualHandoff` to the owner, and stop.
-2. Consider only skills whose name starts with `InventoryClose_` and whose description says they match task names. A match needs the task name to contain the routing phrase quoted in the description. Area only corroborates.
+1. Call **ICA - Load licensed skill** with an empty `skillName` to get the catalogue. If `licensed = false`: record **Blocked** with code `LicenceExpired` (state `unavailable` → `LicenceUnavailable`), send `ManualHandoff` to the owner, and stop.
+2. Consider only skills in the catalogue whose name starts with `InventoryClose_` and whose description says they match task names. A match needs the task name to contain the routing phrase quoted in the description. Area only corroborates.
 3. Exactly one match → continue. Zero → send the owner a navigation handoff (send-close-notification, type `NoProcedure`) and record **Skipped**. Several → stop, record **Blocked** with code `AmbiguousRouting`.
-4. Call **`get_skill`** with the exact name. If `licensed = false` → same as 1. Confirm the returned skill's **Routing contract** section agrees with the match; if not, record **Blocked** `AmbiguousRouting`.
-5. Freeze the skill's name, **version**, `postingPolicy` and `defaultExecutionMode` for this attempt. If a notice was returned, keep it for the report.
+4. Call **ICA - Load licensed skill** with the exact name.
+   - `licensed = false` → same as 1.
+   - `state = setting-missing` → record **Blocked** `SettingMissing` with the names in `missingSettings`, send `BlockedHandoff` to the close owner ("ask your administrator to set …"), and stop.
+   - Confirm the returned skill's **Routing contract** section agrees with the match; if not, record **Blocked** `AmbiguousRouting`.
+5. Freeze the skill's name, **version**, **source** (`live` or `cache`), `postingPolicy` and `defaultExecutionMode` for this attempt. Keep any notice for the report; when `source = cache`, always show it.
 
 ## Step 3 — Mark started
 Call **ICA - Mark task started** with `taskId`, `attemptKey` (= `<taskId>-<UTC yyyyMMddHHmm>`), `triggerSource`. Skip only for the exact HumanStart row (already In progress).
@@ -48,7 +51,7 @@ Follow the business skill. It returns exactly one outcome: ✅ success, ⚠️ n
 | 🛑 | Do not change status further; send `BlockedHandoff` to the owner |
 
 ## Step 6 — Audit exactly once
-Call **record-close-audit** with outcome (Succeeded, Submitted, Blocked, Skipped, Failed), result code, error stage, status before/after, verified flag, skill name + version, posting policy, trigger source.
+Call **record-close-audit** with outcome (Succeeded, Submitted, Blocked, Skipped, Failed), result code, error stage, status before/after, verified flag, skill name + version + source, posting policy, trigger source.
 
 ## Step 7 — Return
 One-line result + the skill's report. If called by run-close-chain, return the outcome so the chain can decide.

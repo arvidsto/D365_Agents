@@ -38,10 +38,11 @@ export function evaluateLicence(licence, now, { warningDays = 30, defaultGraceDa
         licensed: true,
         daysLeft,
         expiresOn: isoDate(expiresAt),
+        graceEndsAt,
         notice: `Licence renews or expires on ${isoDate(expiresAt)} (${daysLeft} day${daysLeft === 1 ? '' : 's'} left).`
       };
     }
-    return { state: 'active', licensed: true, daysLeft, expiresOn: isoDate(expiresAt), notice: null };
+    return { state: 'active', licensed: true, daysLeft, expiresOn: isoDate(expiresAt), graceEndsAt, notice: null };
   }
 
   if (now <= graceEndsAt) {
@@ -51,11 +52,27 @@ export function evaluateLicence(licence, now, { warningDays = 30, defaultGraceDa
       licensed: true,
       daysLeft: 0,
       expiresOn: isoDate(expiresAt),
+      graceEndsAt,
       notice: `Licence expired on ${isoDate(expiresAt)}. The agent stops starting new tasks in ${graceDaysLeft} day${graceDaysLeft === 1 ? '' : 's'} unless the licence is renewed.`
     };
   }
 
   return blocked('expired', `Licence expired on ${isoDate(expiresAt)}. New tasks are blocked until it is renewed.`, isoDate(expiresAt));
+}
+
+/**
+ * How long the customer may keep using a skill it has already fetched if this
+ * service becomes unreachable. Never beyond the end of the grace period, so a
+ * cached copy can't extend a licence.
+ */
+export function offlineCacheUntil(licence, evaluation, now, { defaultOfflineHours = 4, maxOfflineHours = 24 } = {}) {
+  if (!evaluation.licensed || !evaluation.graceEndsAt) return now;
+  const requested = Number.isFinite(Number(licence.offlineHours)) && licence.offlineHours !== ''
+    ? Number(licence.offlineHours)
+    : defaultOfflineHours;
+  const hours = Math.min(Math.max(requested, 0), maxOfflineHours);
+  const until = new Date(now.getTime() + hours * 60 * 60 * 1000);
+  return until < evaluation.graceEndsAt ? until : evaluation.graceEndsAt;
 }
 
 /** Is this agent covered by the licence? `agents` is stored as a comma-separated list. */

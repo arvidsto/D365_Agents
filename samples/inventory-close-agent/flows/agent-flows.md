@@ -2,7 +2,7 @@
 
 Agent flows must finish within the Copilot Studio agent-flow time limit (about 100 seconds). Anything longer is handed to batch and finished by the watcher.
 
-Connection references: `ica_Dataverse`, `ica_Agents`, `ica_Teams`, `ica_FinOps` (watcher reads), `ica_Office365` (only if not using Work IQ Mail).
+Connection references: `ica_Dataverse`, `ica_Agents`, `ica_Teams`, `ica_FinOps` (watcher reads), `ica_LicensedSkills` (licensing service connector), `ica_Office365` (only if not using Work IQ Mail).
 
 ---
 
@@ -69,6 +69,66 @@ Trigger: When an agent calls the flow  inputs: taskId, attemptKey, summary
 ```
 
 > If the agent-flow time limit is shorter than your wait, split the flow: post the card from a cloud flow, return `Pending`, and let the controller's response update `ica_approval` and set the task to In progress (HumanStart path).
+
+## ICA - Load licensed skill
+
+The only way the agent gets business skills. It talks to your [licensing service](../../../licensing-service/README.md), keeps a short-lived copy for outages, and fills the customer's settings in. Nothing from the customer's data is sent.
+
+```text
+Trigger: When an agent calls the flow
+  inputs: skillName (text; empty = return the catalogue of skills instead)
+
+1. Get environment variables: ica_TenantId, ica_BatchGroup, ica_BusinessHours,
+   ica_InventoryMainAccounts
+2. Set cacheKey = (skillName empty ? '__catalogue__' : skillName)
+
+3. Scope "Call service"  (action timeout 20 s, retry policy: none — fail fast)
+     skillName empty → Licensed Skills · ListSkills (agentId = inventory-close-agent,
+                                                     x-tenant-id = ica_TenantId)
+     otherwise       → Licensed Skills · GetSkill  (agentId, skillName, x-tenant-id)
+
+4. Switch on the outcome of "Call service"   (use "Configure run after")
+   a) Succeeded and body.licensed == true                         → LIVE
+        Dataverse · Upsert ica_skillcache (key = cacheKey):
+          ica_content     = skillName empty ? string(body.skills) : body.content
+          ica_version     = body.version, ica_notice = body.notice
+          ica_cacheuntil  = body.cacheUntil, ica_fetchedon = utcNow()
+        content = (as stored), source = 'live', notice = body.notice
+   b) Succeeded and body.licensed == false, or status 401          → FINAL NO
+        Dataverse · Delete every ica_skillcache row
+        Respond: licensed = false, state = body.state (or 'invalid-key'),
+                 notice = body.notice, source = 'live'            (stop)
+   c) Status 404                                                  → NOT FOUND
+        Respond: licensed = true, found = false                   (stop)
+   d) Failed, timed out, 429 or 5xx                               → SERVICE UNREACHABLE
+        Dataverse · Get ica_skillcache (key = cacheKey)
+        If row exists and utcNow() < ica_cacheuntil:
+            content = ica_content, source = 'cache',
+            notice  = 'Licensing service unreachable; using the copy fetched at ' +
+                      ica_fetchedon + ', valid until ' + ica_cacheuntil + '.'
+        Else:
+            Delete the row if it exists
+            Respond: licensed = false, state = 'unavailable',
+                     notice = 'Licensing service unreachable and no valid cached copy.'  (stop)
+
+5. Fill customer settings (skills only; the catalogue has no placeholders):
+     content = replace(replace(replace(content,
+                 '{{env:ica_BatchGroup}}',            ica_BatchGroup),
+                 '{{env:ica_BusinessHours}}',         ica_BusinessHours),
+                 '{{env:ica_InventoryMainAccounts}}', ica_InventoryMainAccounts)
+6. If content contains '{{env:' → Respond: licensed = true, state = 'setting-missing',
+     missingSettings = the names still in the text, content = ''      (stop)
+
+7. Respond to the agent:
+     licensed = true, found = true, state, source ('live' | 'cache'), version,
+     notice, content (skill text, or the catalogue JSON when skillName was empty)
+```
+
+**Rules that keep it honest**
+- The cache is only used when the service **can't answer**. A real "not licensed" from the service deletes the cache immediately.
+- `cacheUntil` comes from the service and never goes past the licence's grace period, so the customer can't stretch the window.
+- Only this flow's connection can read `ica_skillcache`. No user security role includes it.
+- When you add a placeholder to a skill, add the environment variable and one more `replace()` in step 5. Step 6 stops the task until you do.
 
 ## ICA - Wait
 `Delay` for min(seconds, 60) → Respond ok.

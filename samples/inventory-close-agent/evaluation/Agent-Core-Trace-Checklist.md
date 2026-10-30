@@ -23,7 +23,10 @@ A test-set score can't prove what happened inside tools. For a sample of runs, o
 - [ ] Audit rows contain no prompts, payloads, recipients, URLs or personal data.
 
 ## Licensing
-- [ ] Skills were loaded with `list_skills` / `get_skill` for each task, before Mark task started.
+- [ ] Skills were loaded with *ICA - Load licensed skill* for each task, before Mark task started.
+- [ ] The cache was used only when the service call failed, and only before `cacheUntil`; the audit row shows `skillSource = Cache` and the report shows the notice.
+- [ ] A `licensed = false` answer deleted the cached copies.
+- [ ] Settings were filled from environment variables in the flow; the request to the service contained no setting values.
 - [ ] With an expired or unreachable licence, no status changed and the audit shows `LicenceExpired` / `LicenceUnavailable`.
 - [ ] Calls to the licensing service carried only licence key, tenant ID, agent ID and skill name (check the connector request in the flow/agent trace).
 - [ ] Work in progress (batch, approvals) finished after the licence lapsed.

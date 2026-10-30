@@ -7,21 +7,41 @@
   },
   "host": "<your-apim-name>.azure-api.net",
   "basePath": "/licensing",
-  "schemes": ["https"],
-  "consumes": ["application/json"],
-  "produces": ["application/json"],
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
   "securityDefinitions": {
-    "licenceKey": { "type": "apiKey", "in": "header", "name": "x-licence-key" }
+    "licenceKey": {
+      "type": "apiKey",
+      "in": "header",
+      "name": "x-licence-key"
+    }
   },
-  "security": [{ "licenceKey": [] }],
+  "security": [
+    {
+      "licenceKey": []
+    }
+  ],
   "parameters": {
     "agentId": {
-      "name": "agentId", "in": "path", "required": true, "type": "string",
+      "name": "agentId",
+      "in": "path",
+      "required": true,
+      "type": "string",
       "x-ms-summary": "Agent ID",
       "description": "Agent identifier, e.g. inventory-close-agent or credit-hold-review-agent."
     },
     "tenantId": {
-      "name": "x-tenant-id", "in": "header", "required": false, "type": "string",
+      "name": "x-tenant-id",
+      "in": "header",
+      "required": false,
+      "type": "string",
       "x-ms-summary": "Tenant ID",
       "description": "Microsoft Entra tenant ID of the customer. When sent, it must match the licence."
     }
@@ -32,8 +52,22 @@
         "operationId": "GetLicenceStatus",
         "summary": "Get licence status",
         "description": "Checks whether the agent is licensed now. Call at the start of a run; if licensed is false, start no new work and report the notice.",
-        "parameters": [{ "$ref": "#/parameters/agentId" }, { "$ref": "#/parameters/tenantId" }],
-        "responses": { "200": { "description": "Licence status", "schema": { "$ref": "#/definitions/LicenceStatus" } } }
+        "parameters": [
+          {
+            "$ref": "#/parameters/agentId"
+          },
+          {
+            "$ref": "#/parameters/tenantId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Licence status",
+            "schema": {
+              "$ref": "#/definitions/LicenceStatus"
+            }
+          }
+        }
       }
     },
     "/v1/agents/{agentId}/skills": {
@@ -41,8 +75,22 @@
         "operationId": "ListSkills",
         "summary": "List skills",
         "description": "Lists the skills this agent may use with name, version and description (routing contract). Use it to choose exactly one skill.",
-        "parameters": [{ "$ref": "#/parameters/agentId" }, { "$ref": "#/parameters/tenantId" }],
-        "responses": { "200": { "description": "Skill list", "schema": { "$ref": "#/definitions/SkillList" } } }
+        "parameters": [
+          {
+            "$ref": "#/parameters/agentId"
+          },
+          {
+            "$ref": "#/parameters/tenantId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Skill list",
+            "schema": {
+              "$ref": "#/definitions/SkillList"
+            }
+          }
+        }
       }
     },
     "/v1/agents/{agentId}/skills/{skillName}": {
@@ -51,11 +99,29 @@
         "summary": "Get skill",
         "description": "Returns the full instructions of ONE skill by exact name. If licensed is false, stop the task and report the notice.",
         "parameters": [
-          { "$ref": "#/parameters/agentId" },
-          { "name": "skillName", "in": "path", "required": true, "type": "string", "x-ms-summary": "Skill name", "description": "Exact skill name, e.g. CHR_CreditPolicy." },
-          { "$ref": "#/parameters/tenantId" }
+          {
+            "$ref": "#/parameters/agentId"
+          },
+          {
+            "name": "skillName",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "x-ms-summary": "Skill name",
+            "description": "Exact skill name, e.g. CHR_CreditPolicy."
+          },
+          {
+            "$ref": "#/parameters/tenantId"
+          }
         ],
-        "responses": { "200": { "description": "Skill", "schema": { "$ref": "#/definitions/Skill" } } }
+        "responses": {
+          "200": {
+            "description": "Skill",
+            "schema": {
+              "$ref": "#/definitions/Skill"
+            }
+          }
+        }
       }
     },
     "/mcp/{agentId}": {
@@ -64,8 +130,16 @@
         "summary": "Licensed skills MCP server",
         "description": "MCP server with the tools licence_status, list_skills and get_skill.",
         "x-ms-agentic-protocol": "mcp-streamable-1.0",
-        "parameters": [{ "$ref": "#/parameters/agentId" }],
-        "responses": { "200": { "description": "Success" } }
+        "parameters": [
+          {
+            "$ref": "#/parameters/agentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
       }
     }
   },
@@ -73,38 +147,106 @@
     "LicenceStatus": {
       "type": "object",
       "properties": {
-        "licensed": { "type": "boolean" },
-        "state": { "type": "string", "description": "active, expiring, grace, expired, suspended, not-started, tenant-mismatch, agent-not-licensed" },
-        "tier": { "type": "string" },
-        "expiresOn": { "type": "string" },
-        "daysLeft": { "type": "integer" },
-        "notice": { "type": "string" }
+        "licensed": {
+          "type": "boolean"
+        },
+        "state": {
+          "type": "string",
+          "description": "active, expiring, grace, expired, suspended, not-started, tenant-mismatch, agent-not-licensed"
+        },
+        "tier": {
+          "type": "string"
+        },
+        "expiresOn": {
+          "type": "string"
+        },
+        "daysLeft": {
+          "type": "integer"
+        },
+        "notice": {
+          "type": "string"
+        },
+        "cacheUntil": {
+          "type": "string",
+          "description": "Until when (UTC) the caller may use a cached copy if this service becomes unreachable. Never later than the end of the grace period."
+        }
       }
     },
     "SkillList": {
       "type": "object",
       "properties": {
-        "licensed": { "type": "boolean" },
-        "state": { "type": "string" },
-        "notice": { "type": "string" },
+        "licensed": {
+          "type": "boolean"
+        },
+        "state": {
+          "type": "string"
+        },
+        "notice": {
+          "type": "string"
+        },
         "skills": {
           "type": "array",
           "items": {
             "type": "object",
-            "properties": { "name": { "type": "string" }, "version": { "type": "string" }, "description": { "type": "string" } }
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "settings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Environment variable schema names used as {{env:<name>}} placeholders; fill them in the customer's tenant."
+              }
+            }
           }
+        },
+        "cacheUntil": {
+          "type": "string",
+          "description": "Until when (UTC) the caller may use a cached copy if this service becomes unreachable. Never later than the end of the grace period."
         }
       }
     },
     "Skill": {
       "type": "object",
       "properties": {
-        "licensed": { "type": "boolean" },
-        "state": { "type": "string" },
-        "notice": { "type": "string" },
-        "skill": { "type": "string" },
-        "version": { "type": "string" },
-        "content": { "type": "string", "description": "Skill instructions (Markdown). Empty when not licensed." }
+        "licensed": {
+          "type": "boolean"
+        },
+        "state": {
+          "type": "string"
+        },
+        "notice": {
+          "type": "string"
+        },
+        "skill": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string",
+          "description": "Skill instructions (Markdown). Empty when not licensed."
+        },
+        "cacheUntil": {
+          "type": "string",
+          "description": "Until when (UTC) the caller may use a cached copy if this service becomes unreachable. Never later than the end of the grace period."
+        },
+        "settings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Environment variable schema names used as {{env:<name>}} placeholders; fill them in the customer's tenant."
+        }
       }
     }
   }

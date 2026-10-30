@@ -60,3 +60,41 @@ test('agent entitlement uses an exact list match', () => {
   assert.equal(isAgentEntitled(lic, 'credit-hold-review-agent'), true);
   assert.equal(isAgentEntitled(lic, 'credit-hold'), false);
 });
+
+import { offlineCacheUntil } from '../src/lib/licence.js';
+
+const hoursBetween = (a, b) => (b - a) / 3600000;
+
+test('offline cache window uses the default hours', () => {
+  const now = at('2026-06-01T00:00:00Z');
+  const ev = evaluateLicence(base, now);
+  assert.equal(hoursBetween(now, offlineCacheUntil(base, ev, now, { defaultOfflineHours: 4 })), 4);
+});
+
+test('offline window per licence is capped by the maximum', () => {
+  const now = at('2026-06-01T00:00:00Z');
+  const lic = { ...base, offlineHours: 72 };
+  const ev = evaluateLicence(lic, now);
+  assert.equal(hoursBetween(now, offlineCacheUntil(lic, ev, now, { maxOfflineHours: 24 })), 24);
+});
+
+test('offline window never runs past the end of the grace period', () => {
+  const now = at('2027-01-07T14:00:00Z'); // grace ends 2027-01-07T15:59:59Z
+  const ev = evaluateLicence(base, now);
+  assert.equal(ev.state, 'grace');
+  const until = offlineCacheUntil(base, ev, now, { defaultOfflineHours: 4 });
+  assert.equal(until.toISOString(), '2027-01-07T15:59:59.000Z');
+});
+
+test('offlineHours 0 means no offline use', () => {
+  const now = at('2026-06-01T00:00:00Z');
+  const lic = { ...base, offlineHours: 0 };
+  assert.equal(offlineCacheUntil(lic, evaluateLicence(lic, now), now).getTime(), now.getTime());
+});
+
+test('no offline window for a blocked licence', () => {
+  const now = at('2027-03-01T00:00:00Z');
+  const ev = evaluateLicence(base, now);
+  assert.equal(ev.licensed, false);
+  assert.equal(offlineCacheUntil(base, ev, now).getTime(), now.getTime());
+});

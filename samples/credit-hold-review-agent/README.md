@@ -169,7 +169,7 @@ Follow the [solution approach](../../docs/02-solution-approach.md#phase-3--build
 4. Create the model-driven app **Credit Hold Review** with the two tables and the views described there.
 
 ### Step 3 — Agent flows (deterministic tools)
-5. In **Copilot Studio → Flows**, create the 5 agent flows from [`flows/agent-flows.md`](flows/agent-flows.md). Each starts with *When an agent calls the flow* and ends with *Respond to the agent*.
+5. In **Copilot Studio → Flows**, create the agent flows and the two child flows from [`flows/agent-flows.md`](flows/agent-flows.md). Each starts with *When an agent calls the flow* and ends with *Respond to the agent*.
 6. Create the AI prompt from [`prompts/credit-recommendation-prompt.md`](prompts/credit-recommendation-prompt.md) and call it from *CHR – Build credit case*.
 7. Test each flow on its own with a real hold from USMF.
 
@@ -179,7 +179,7 @@ Follow the [solution approach](../../docs/02-solution-approach.md#phase-3--build
 10. **Tools → Add a tool → Model Context Protocol → Dynamics 365 ERP MCP.** Connect, then turn off *Allow all* and keep only read/data tools for the first release (see [`agent/tools.md`](agent/tools.md)).
 11. **Tools → Add → Dataverse MCP Server.** Keep only `search`, `read_query`, `fetch`. Turn off all create/update/delete/table tools.
 12. **Tools → Add → Agent flow** for each CHR flow; paste the descriptions from [`agent/tools.md`](agent/tools.md).
-13. **Knowledge → Add** the credit policy document (SharePoint or upload [`knowledge/credit-policy-sample.md`](knowledge/credit-policy-sample.md)). **Tools → Add → Model Context Protocol → Licensed Agent Skills** (see [Licensing](#licensing)); the agent loads the credit policy skill from it at run time.
+13. **Knowledge → Add** the credit policy document (SharePoint or upload [`knowledge/credit-policy-sample.md`](knowledge/credit-policy-sample.md)). Add the *CHR - Load licensed skill* agent flow as a tool (see [Licensing](#licensing)); the agent loads the credit policy skill with it at run time.
 14. **Triggers → Add → Recurrence** every 30 minutes with payload `Check for new credit holds in company {CompanyCode}`. Add a Dataverse trigger *When a row is modified* on `chr_creditholdreview` (column `chr_status`) with payload `Continue review {chr_creditholdreviewid}`.
 15. Settings → generative orchestration **on**; general knowledge **off**; web search **off**.
 
@@ -194,11 +194,15 @@ The policy skill and the recommendation prompt are your IP, so they're served by
 
 | Where | What it fetches | If the licence isn't valid |
 | --- | --- | --- |
-| Agent, start of every scheduled run and chat question about policy | `CHR_CreditPolicy` via MCP `get_skill` | Registers no new holds, replies "Licence <state>: <notice>" |
-| *CHR - Build credit case* flow, every case | `CHR_CreditRecommendationPrompt` via REST `GetSkill` | Routes the case to manual review with the reason, records `LicenceBlocked` |
+| Agent, start of every scheduled run and chat question about policy | `CHR_CreditPolicy` via *CHR - Load licensed skill* | Registers no new holds, replies "Licence <state>: <notice>" |
+| *CHR - Build credit case* flow, every case | `CHR_CreditRecommendationPrompt` via *CHR - Load licensed skill (child)* | Routes the case to manual review with the reason, records `LicenceBlocked` |
 | *CHR - Apply decision* (already decided reviews) | Nothing | Always finishes, so no review is left half done |
 
 Setup: import the [connector](../../licensing-service/connector/apiDefinition.swagger.json), store the licence key you issue in `chr_LicenceKey` (secret), set `chr_TenantId`, create the `chr_LicensedSkills` connection, and allow the connector in the data policy. During the expiring and grace periods the agent keeps working and adds the renewal notice to its summaries.
+
+**Customer settings.** The policy thresholds (`chr_MaxOverdueDaysForRelease`, `chr_StrategicOpportunityValue`, `chr_AlwaysHumanOrderAmount`) stay environment variables in this solution. The skills contain `{{env:…}}` placeholders that the load flow fills in after the skill arrives, so the values never reach your service. A missing value stops new reviews with `setting-missing`.
+
+**Licensing service outage.** If your service can't be reached, the load flow uses the copy it last fetched until that copy's `cacheUntil` (4 hours by default, set per licence, never past the grace period), and summaries say so. After that, new cases go to manual review. A real "not licensed" answer is never overruled by the cache. See [Offline fallback](../../licensing-service/README.md#3-offline-fallback).
 
 ## 6. Two options for the release action
 

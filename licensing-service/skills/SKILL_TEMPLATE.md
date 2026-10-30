@@ -25,6 +25,9 @@ Task **Name** must contain `<exact phrase>`. **Area = Inventory** corroborates o
 ## Scope
 - Company and period end date come from the close run.
 
+## Customer settings
+Write any value that differs per customer as `{{env:<prefix>_<Name>}}`, for example `{{env:ica_BatchGroup}}`. The customer's *Load licensed skill* flow fills it from the environment variable with that schema name, so the value never reaches the licensing service. Add the variable to the agent's solution and to its `environment-variables.md`. A placeholder left unfilled stops the task with `SettingMissing`.
+
 ## Policy — *edit to change the policy*
 | Rule | Value |
 |---|---|

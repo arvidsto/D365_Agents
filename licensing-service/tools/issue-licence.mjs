@@ -2,7 +2,7 @@
 //
 //   node tools/issue-licence.mjs --customer "Contoso Pte Ltd" --tenant <entra-tenant-id> \
 //     --agents inventory-close-agent,credit-hold-review-agent --tier Standard \
-//     --starts 2026-11-01 --expires 2027-10-31 [--grace 7] [--local ./dev/licences.json]
+//     --starts 2026-11-01 --expires 2027-10-31 [--grace 7] [--offline-hours 4] [--local ./dev/licences.json]
 //
 // Without --local it writes to Azure Table Storage using LICENCE_TABLE_CONNECTION
 // (or LICENCE_TABLE_URL + your Azure sign-in) and LICENCE_TABLE_NAME.
@@ -21,6 +21,7 @@ const { values: a } = parseArgs({
     starts: { type: 'string' },
     expires: { type: 'string' },
     grace: { type: 'string', default: '7' },
+    'offline-hours': { type: 'string' },
     local: { type: 'string' }
   }
 });
@@ -39,6 +40,9 @@ const licence = {
   // Valid until the end of the expiry day, Singapore time.
   expiresAt: new Date(`${a.expires}T23:59:59+08:00`).toISOString(),
   graceDays: Number(a.grace),
+  // Hours a customer may keep using cached skills if this service is unreachable.
+  // Empty = service default (DEFAULT_OFFLINE_HOURS); capped by MAX_OFFLINE_HOURS.
+  offlineHours: a['offline-hours'] ?? '',
   status: 'active',
   keyHash
 };

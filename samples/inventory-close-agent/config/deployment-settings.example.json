@@ -31,6 +31,18 @@
     {
       "SchemaName": "ica_TenantId",
       "Value": "<customer-entra-tenant-id>"
+    },
+    {
+      "SchemaName": "ica_BatchGroup",
+      "Value": "INVCLOSE"
+    },
+    {
+      "SchemaName": "ica_BusinessHours",
+      "Value": "07:00-19:00"
+    },
+    {
+      "SchemaName": "ica_InventoryMainAccounts",
+      "Value": "140100, 140150, 140200"
     }
   ],
   "ConnectionReferences": [

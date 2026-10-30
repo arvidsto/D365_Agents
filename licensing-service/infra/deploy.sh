@@ -35,7 +35,7 @@ az functionapp config appsettings set -n "$FUNCAPP" -g "$RG" --settings \
   LICENCE_STORE=table \
   LICENCE_TABLE_URL="https://$STORAGE.table.core.windows.net" \
   LICENCE_TABLE_NAME=Licences \
-  WARNING_DAYS=30 DEFAULT_GRACE_DAYS=7
+  WARNING_DAYS=30 DEFAULT_GRACE_DAYS=7 DEFAULT_OFFLINE_HOURS=4 MAX_OFFLINE_HOURS=24
 
 # Deploy code (run from the licensing-service folder)
 npm ci --omit=dev

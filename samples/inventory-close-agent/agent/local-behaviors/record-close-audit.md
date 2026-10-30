@@ -11,10 +11,10 @@ Call **ICA - Record task audit** exactly once per terminal decision.
 |---|---|
 | attemptKey | Same key used for Mark task started (`<taskId>-<UTC yyyyMMddHHmm>`); for skipped tasks without a start, `<taskId>-skip-<UTC yyyyMMddHHmm>` |
 | outcome | Succeeded · Submitted · Blocked · Skipped · Failed |
-| resultCode | Short code, e.g. `Completed`, `NegativeOnHandFound`, `NotAgentEnabled`, `ApprovalRejected`, `BatchSubmitted`, `LicenceExpired`, `LicenceUnavailable` |
+| resultCode | Short code, e.g. `Completed`, `NegativeOnHandFound`, `NotAgentEnabled`, `ApprovalRejected`, `BatchSubmitted`, `LicenceExpired`, `LicenceUnavailable`, `SettingMissing` |
 | errorStage / errorCode | When something stopped: `Context`, `Licence`, `Gate`, `Routing`, `MarkStarted`, `Procedure`, `MarkCompleted`, `Notify` |
 | statusBefore / statusAfter / statusVerified | From the flows' responses |
-| skillName / skillVersion / postingPolicy | Frozen at routing (version as returned by the licensing service) |
+| skillName / skillVersion / skillSource / postingPolicy | Frozen at routing (version and source `Live` or `Cache` as returned by *ICA - Load licensed skill*) |
 | triggerSource | Chat · HumanStart · CompletionAutostart · BatchWatcher · ReminderSweep |
 
 ## Rules

@@ -8,6 +8,8 @@
     "LICENCE_TABLE_CONNECTION": "",
     "LICENCE_TABLE_NAME": "Licences",
     "WARNING_DAYS": "30",
-    "DEFAULT_GRACE_DAYS": "7"
+    "DEFAULT_GRACE_DAYS": "7",
+    "DEFAULT_OFFLINE_HOURS": "4",
+    "MAX_OFFLINE_HOURS": "24"
   }
 }

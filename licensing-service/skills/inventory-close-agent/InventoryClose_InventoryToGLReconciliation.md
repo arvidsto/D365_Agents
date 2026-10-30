@@ -25,7 +25,7 @@ Task **Name** must contain `reconcile inventory value`. Area = Inventory or Gene
 ## Policy — *edit to change the policy*
 | Rule | Value |
 |---|---|
-| Inventory main accounts | `{{INVENTORY_ACCOUNTS}}` (replace, e.g. 140100, 140150, 140200) |
+| Inventory main accounts | `{{env:ica_InventoryMainAccounts}}` (customer setting) |
 | Tolerance per account | 0.5% or 1,000 (company currency), whichever is greater |
 
 ## Report

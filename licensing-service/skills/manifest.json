@@ -3,7 +3,7 @@
     "inventory-close-agent": {
       "skills": {
         "InventoryClose_InventoryToGLReconciliation": {
-          "version": "1.0.0",
+          "version": "1.1.0",
           "file": "inventory-close-agent/InventoryClose_InventoryToGLReconciliation.md"
         },
         "InventoryClose_NegativeInventoryCheck": {
@@ -31,7 +31,7 @@
           "file": "inventory-close-agent/InventoryClose_ProductionOrderReview.md"
         },
         "InventoryClose_RunInventoryClose": {
-          "version": "1.0.0",
+          "version": "1.1.0",
           "file": "inventory-close-agent/InventoryClose_RunInventoryClose.md"
         }
       }
@@ -39,11 +39,11 @@
     "credit-hold-review-agent": {
       "skills": {
         "CHR_CreditPolicy": {
-          "version": "1.0.0",
+          "version": "1.1.0",
           "file": "credit-hold-review-agent/CHR_CreditPolicy.md"
         },
         "CHR_CreditRecommendationPrompt": {
-          "version": "1.0.0",
+          "version": "1.1.0",
           "file": "credit-hold-review-agent/CHR_CreditRecommendationPrompt.md"
         }
       }

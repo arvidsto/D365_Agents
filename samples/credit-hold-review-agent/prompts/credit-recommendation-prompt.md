@@ -8,7 +8,7 @@ Create in **Copilot Studio → Tools → New → Prompt** (or AI Builder prompt)
 
 | Name | Type | Example |
 | --- | --- | --- |
-| `instructions` | Text | Skill content from the licensing service, with `{maxOverdueDays}` and `{strategicOpportunityValue}` already filled in by the flow |
+| `instructions` | Text | Skill content from the licensing service, with `{{env:chr_MaxOverdueDaysForRelease}}` and `{{env:chr_StrategicOpportunityValue}}` already filled in by *CHR - Load licensed skill* |
 | `factsJson` | Text | see facts schema below |
 | `blockingReason` | Text | `Overdue amount` |
 

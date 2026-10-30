@@ -23,17 +23,6 @@ The orchestrator picks tools by **name + description + input descriptions**. Cop
 | Tools disabled | `create_record`, `update_record`, `delete_record`, `create_table`, `update_table`, `delete_table`, `list_tables`, `describe_table` |
 | Tables used | `account` (match on account number = F&O customer account), `opportunity` (open, estimated value), `incident` (open cases; dispute / complaint flag) |
 
-### Licensed Skills (your licensing service, MCP)
-
-| Setting | Value |
-| --- | --- |
-| Connection | Custom connector from [`licensing-service/connector`](../../../licensing-service/connector/apiDefinition.swagger.json), API key = the customer's licence key (stored as secret env variable `chr_LicenceKey`) |
-| Server URL | `https://<apim>.azure-api.net/licensing/mcp/credit-hold-review-agent` |
-| Tools enabled | `get_skill`, `licence_status` |
-| Tools disabled | `list_skills` (this agent uses one known skill) |
-| Used for | Loading `CHR_CreditPolicy` at the start of each run. The *Build credit case* flow separately fetches `CHR_CreditRecommendationPrompt` through the REST operation `GetSkill` |
-| Sends | Licence key, tenant ID, agent ID, skill name. **No customer data** |
-
 ## 2. Agent flows
 
 ### CHR - Register hold
@@ -67,6 +56,17 @@ The orchestrator picks tools by **name + description + input descriptions**. Cop
 | **Description** | Applies the recorded human decision for ONE review item. Option A: sets ReleasePending and sends the manager the D365 link; when verifiedReleased = true, closes the item. Option B: calls the D365 release action, then re-reads D365 to verify. Never call this without an Approved or Rejected status. |
 | **Inputs** | `reviewId` (GUID), `verifiedReleased` (yes/no, default no) |
 | **Outputs** | `status` (ReleasePending / Released / Closed / Failed), `message` (text) |
+
+### CHR - Load licensed skill
+
+| | |
+| --- | --- |
+| **Description** | Returns ONE licensed skill by exact name (for this agent: CHR_CreditPolicy), with the customer's settings filled in. Uses a short-lived cached copy only if the licensing service can't be reached. If licensed is false or state is setting-missing, start no new reviews. |
+| **Inputs** | `skillName` (text) — exact skill name, e.g. CHR_CreditPolicy |
+| **Outputs** | `licensed`, `found`, `state`, `source` (live/cache), `version`, `notice`, `content`, `missingSettings` |
+| **Sends to the licensing service** | Licence key, tenant ID, agent ID, skill name. **No customer data and no setting values** |
+
+The licensing service also offers an MCP endpoint, but this agent uses the flow because only the flow can fall back to the cache during an outage and fill in the customer's settings.
 
 ### CHR - Log & notify
 

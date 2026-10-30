@@ -8,7 +8,7 @@ This sample deliberately copies the **architecture of Microsoft's FastTrack [Per
 | --- | --- |
 | **D365 apps** | Supply Chain Management (cost management, inventory, production), Finance (general ledger) |
 | **Platform** | Copilot Studio (Microsoft Copilot harness with skills), agent flows, Dataverse, Work IQ Mail, Teams |
-| **Tools** | Dynamics 365 ERP MCP, Dataverse MCP, Work IQ Mail MCP, Licensed Skills MCP (your [licensing service](../../licensing-service/README.md)), 8 agent flows |
+| **Tools** | Dynamics 365 ERP MCP, Dataverse MCP, Work IQ Mail MCP, your [licensing service](../../licensing-service/README.md) through *ICA - Load licensed skill*, 6 agent flows and 4 event / scheduled flows |
 | **Pattern** | Local behaviors (developer-owned) + business skills (business-owned) + authorization gate + verified status + audit |
 | **Status** | Learning sample / blueprint, built from the design in this folder |
 
@@ -88,7 +88,7 @@ flowchart TB
         MCP1["Dynamics 365 ERP MCP<br/>(signed-in user)"]
         MCP2["Dataverse MCP<br/>checklist"]
         MCP3["Work IQ Mail<br/>(one governed sender)"]
-        MCP4["Licensed Skills MCP<br/>(your tenant: key in, skill text out)"]
+        MCP4["ICA - Load licensed skill<br/>(licensing service · offline cache ·<br/>fills customer settings)"]
         F1["ICA - Mark task started"]
         F2["ICA - Mark task completed"]
         F3["ICA - Record task audit"]
@@ -162,7 +162,7 @@ sequenceDiagram
     actor U as Cost accountant
     participant A as Agent (local behaviors)
     participant DV as Dataverse (checklist, audit)
-    participant L as Licensed Skills MCP
+    participant L as ICA - Load licensed skill
     participant S as Business skill
     participant ERP as ERP MCP (SCM)
     participant F as Agent flows
@@ -173,8 +173,8 @@ sequenceDiagram
     A->>A: Gates: exactly one row · Agent enabled · NotStarted/Returned · dependencies complete · run not locked
     A->>F: ICA - Mark task started (writes StartClaimed, status, re-reads)
     F-->>A: verified = true
-    A->>L: list_skills → route by description → get_skill (exactly one)
-    L-->>A: Skill text, or licensed=false → stop before any status change
+    A->>L: Catalogue → route by description → load one skill
+    L-->>A: Skill text with settings filled (live or cached), or licensed=false → stop before any status change
     A->>S: Follow the skill
     S->>ERP: Live reads (on-hand by item and dimension)
     S-->>A: Outcome ✅ / ⚠️ / 🛑 + report
@@ -196,7 +196,7 @@ sequenceDiagram
 | [`agent/local-behaviors/`](agent/local-behaviors/) | 7 developer-owned skills in `SKILL.md` format |
 | [`../../licensing-service/skills/inventory-close-agent/`](../../licensing-service/skills/inventory-close-agent/) | 7 procedure skills and 1 notification-wording policy, **served by the licensing service** and never shipped in the solution. [Template](../../licensing-service/skills/SKILL_TEMPLATE.md) |
 | [`agent/tools.md`](agent/tools.md) | MCP servers (with tools to turn off), agent flows, triggers |
-| [`flows/agent-flows.md`](flows/agent-flows.md) | Specs for 5 agent flows and 4 event / scheduled flows |
+| [`flows/agent-flows.md`](flows/agent-flows.md) | Specs for 6 agent flows and 4 event / scheduled flows |
 | [`dataverse/tables.md`](dataverse/tables.md) | Close run, close task, audit and approval tables; security roles; review app |
 | [`data/sample-close-checklist.csv`](data/sample-close-checklist.csv) | Sample checklist to load for USMF |
 | [`config/`](config/) | Environment variables, connection references, deployment settings |
@@ -218,11 +218,11 @@ sequenceDiagram
 ## 6. Build guide
 
 1. **Solution.** Publisher prefix `ica`, unmanaged solution *Inventory Close Agent*. Add env variables and connection references from [`config/`](config/).
-2. **Dataverse.** Create the four tables, choices, alternate keys and roles from [`dataverse/tables.md`](dataverse/tables.md). Turn on auditing. Build the *Inventory Close Compliance Review* app. Import [`data/sample-close-checklist.csv`](data/sample-close-checklist.csv) into `ica_closetask` for one close run.
-3. **Agent flows.** Build the five agent flows in [`flows/agent-flows.md`](flows/agent-flows.md). Test *Mark task started* twice on the same task: the second call must return `alreadyClaimed` and change nothing.
+2. **Dataverse.** Create the five tables (including the locked `ica_skillcache`), choices, alternate keys and roles from [`dataverse/tables.md`](dataverse/tables.md). Turn on auditing. Build the *Inventory Close Compliance Review* app. Import [`data/sample-close-checklist.csv`](data/sample-close-checklist.csv) into `ica_closetask` for one close run.
+3. **Agent flows.** Build the six agent flows in [`flows/agent-flows.md`](flows/agent-flows.md). Test *Mark task started* twice on the same task: the second call must return `alreadyClaimed` and change nothing.
 4. **Agent.** Create the agent on the Microsoft Copilot harness. Paste [`agent/instructions.md`](agent/instructions.md). Add each file in [`agent/local-behaviors/`](agent/local-behaviors/) as a skill (upload the Markdown).
-5. **Licensed skills.** Issue a licence for the customer with the [licensing service](../../licensing-service/README.md#6-deploy-to-azure), store the key in `ica_LicenceKey` (secret) and create the `ica_LicensedSkills` connection. The business skills are not created in the customer's environment; see [Licensing](#licensing).
-6. **Tools.** Add ERP MCP, Dataverse MCP, Work IQ Mail and Licensed Skills MCP (`https://<apim>.azure-api.net/licensing/mcp/inventory-close-agent`); switch off the tools listed in [`agent/tools.md`](agent/tools.md). Add the agent flows as tools.
+5. **Licensed skills.** Issue a licence for the customer with the [licensing service](../../licensing-service/README.md#8-deploy-to-azure), store the key in `ica_LicenceKey` (secret), set the customer settings `ica_BatchGroup`, `ica_BusinessHours` and `ica_InventoryMainAccounts`, create the `ica_LicensedSkills` connection, and build *ICA - Load licensed skill* with the locked `ica_skillcache` table. The business skills are not created in the customer's environment; see [Licensing](#licensing).
+6. **Tools.** Add ERP MCP, Dataverse MCP and Work IQ Mail; switch off the tools listed in [`agent/tools.md`](agent/tools.md). Add the agent flows as tools.
 7. **Event & scheduled flows.** Build the four flows; leave them **off** until validation passes.
 8. **Validate.** Run both core test sets and the business-skill tests in [`evaluation/`](evaluation/), human-review every response, complete the trace checklist.
 9. **Release.** Restrict access to the security group, publish to Teams and Microsoft 365 Copilot, turn on *Run human-started task*; turn on *Auto-run next* when the team is ready.
@@ -254,12 +254,16 @@ The business skills are the valuable part of this agent, so they live in your [l
 
 | Where | Call | If the licence isn't valid |
 | --- | --- | --- |
-| `execute-close-task` Step 2, **before** Mark started | `list_skills`, then `get_skill` for the routed skill | Task not started, no status change. Audit `Blocked` / `LicenceExpired` (or `LicenceUnavailable` if the service can't be reached). `ManualHandoff` to the owner |
+| `execute-close-task` Step 2, **before** Mark started | *ICA - Load licensed skill*: catalogue, then the routed skill | Task not started, no status change. Audit `Blocked` / `LicenceExpired`. `ManualHandoff` to the owner |
 | `run-close-chain` | Stops at the first `LicenceExpired` task | Hands the rest of the close to people |
-| `send-close-notification` | `get_skill InventoryClose_Notifications` for wording | Uses fixed plain wording, so owners are still told |
+| `send-close-notification` | *ICA - Load licensed skill* `InventoryClose_Notifications` for wording | Uses fixed plain wording, so owners are still told |
 | Batch completion watcher, approvals already given | No skill needed | Always finishes: work in progress is never cut off |
 
 During the expiring and grace periods the agent works normally and adds the renewal notice to its reports.
+
+**Customer settings.** Values that differ per customer (batch group, business hours, inventory main accounts) are environment variables in this solution. The skills contain placeholders such as `{{env:ica_BatchGroup}}`, filled in by *ICA - Load licensed skill* after the skill arrives, so the values never reach your service and one skill version serves every customer. A missing value stops the task with `SettingMissing`.
+
+**Licensing service outage.** If your service can't be reached, *ICA - Load licensed skill* uses the copy it last fetched until that copy's `cacheUntil` (4 hours by default, set per licence, never past the grace period) and every report says so. After that, new tasks stop with `LicenceUnavailable`. A real "not licensed" answer is never overruled by the cache. See [Offline fallback](../../licensing-service/README.md#3-offline-fallback).
 
 ## 9. Extending
 

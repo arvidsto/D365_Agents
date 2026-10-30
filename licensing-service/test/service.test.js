@@ -11,7 +11,7 @@ test('valid key returns the watermarked skill', async () => {
   assert.equal(r.status, 200);
   assert.equal(r.body.licensed, true);
   assert.match(r.body.content, /name: InventoryClose_RunInventoryClose/);
-  assert.match(r.body.content, new RegExp(`licence=${licenceId} agent=${AGENT} skill=${SKILL}@1.0.0`));
+  assert.match(r.body.content, new RegExp(`licence=${licenceId} agent=${AGENT} skill=${SKILL}@1.1.0`));
 });
 
 test('list returns names and descriptions only, never skill bodies', async () => {
@@ -20,7 +20,7 @@ test('list returns names and descriptions only, never skill bodies', async () =>
   assert.equal(r.body.licensed, true);
   assert.ok(r.body.skills.length >= 7);
   for (const s of r.body.skills) {
-    assert.deepEqual(Object.keys(s).sort(), ['description', 'name', 'version']);
+    assert.deepEqual(Object.keys(s).sort(), ['description', 'name', 'settings', 'version']);
   }
 });
 
@@ -83,4 +83,23 @@ test('audit records only allowed fields and never the key', async () => {
   const r = await service.getSkill({ key, tenantId: TENANT, agentId: AGENT, skillName: SKILL });
   assert.ok(!JSON.stringify(r.audit).includes(key));
   assert.ok(!JSON.stringify(r.audit).includes(TENANT));
+});
+
+test('skill response says how long it may be cached and which settings it needs', async () => {
+  const { service, key } = await setup({ now: '2026-06-01T00:00:00Z' });
+  const r = await service.getSkill({ key, agentId: AGENT, skillName: SKILL });
+  assert.equal(r.body.cacheUntil, '2026-06-01T04:00:00.000Z');
+  assert.deepEqual(r.body.settings, ['ica_BatchGroup', 'ica_BusinessHours']);
+  assert.match(r.body.content, /\{\{env:ica_BatchGroup\}\}/); // filled in the customer's tenant, not here
+});
+
+test('every placeholder in every skill uses the env: form', async () => {
+  const { loadCatalogue } = await import('../src/lib/skills.js');
+  const catalogue = await loadCatalogue();
+  for (const skills of Object.values(catalogue)) {
+    for (const s of Object.values(skills)) {
+      assert.equal(/\{\{(?!env:)[^}]*\}\}/.test(s.raw), false, s.name);
+      assert.equal(/(?<!\{)\{[a-z][A-Za-z]*\}(?!\})/.test(s.body.replace(/```[\s\S]*?```/g, '')), false, `${s.name} has an old {name} placeholder`);
+    }
+  }
 });

@@ -1,4 +1,4 @@
-import { evaluateLicence, isAgentEntitled } from './licence.js';
+import { evaluateLicence, isAgentEntitled, offlineCacheUntil } from './licence.js';
 import { parseKey, keyMatches } from './keys.js';
 import { watermark } from './skills.js';
 
@@ -8,8 +8,12 @@ import { watermark } from './skills.js';
 export function createService({ store, catalogue, settings = {}, clock = () => new Date() }) {
   const options = {
     warningDays: Number(settings.WARNING_DAYS ?? 30),
-    defaultGraceDays: Number(settings.DEFAULT_GRACE_DAYS ?? 7)
+    defaultGraceDays: Number(settings.DEFAULT_GRACE_DAYS ?? 7),
+    defaultOfflineHours: Number(settings.DEFAULT_OFFLINE_HOURS ?? 4),
+    maxOfflineHours: Number(settings.MAX_OFFLINE_HOURS ?? 24)
   };
+
+  const cacheUntil = (licence, evaluation) => offlineCacheUntil(licence, evaluation, clock(), options).toISOString();
 
   async function authorize({ key, tenantId, agentId }) {
     const audit = { licenceId: null, agentId, outcome: null };
@@ -47,20 +51,28 @@ export function createService({ store, catalogue, settings = {}, clock = () => n
       tier: licence.tier || null,
       expiresOn: evaluation.expiresOn,
       daysLeft: evaluation.daysLeft,
-      notice: evaluation.notice
+      notice: evaluation.notice,
+      cacheUntil: cacheUntil(licence, evaluation)
     });
   }
 
   async function listSkills(req) {
     const auth = await authorize(req);
     if (!auth.ok) return auth.result;
-    const { evaluation, audit } = auth;
+    const { evaluation, licence, audit } = auth;
     const skills = Object.values(catalogue[req.agentId]).map((s) => ({
       name: s.name,
       version: s.version,
-      description: s.description
+      description: s.description,
+      settings: s.settings
     }));
-    return ok(audit, 'list', { licensed: true, state: evaluation.state, notice: evaluation.notice, skills });
+    return ok(audit, 'list', {
+      licensed: true,
+      state: evaluation.state,
+      notice: evaluation.notice,
+      cacheUntil: cacheUntil(licence, evaluation),
+      skills
+    });
   }
 
   async function getSkill(req) {
@@ -78,6 +90,8 @@ export function createService({ store, catalogue, settings = {}, clock = () => n
       notice: evaluation.notice,
       skill: skill.name,
       version: skill.version,
+      settings: skill.settings,
+      cacheUntil: cacheUntil(licence, evaluation),
       content: watermark(skill, { licenceId: licence.licenceId, agentId: req.agentId, now: clock() })
     });
   }

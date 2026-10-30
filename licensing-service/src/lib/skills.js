@@ -23,12 +23,22 @@ export async function loadCatalogue(skillsDir = DEFAULT_SKILLS_DIR) {
         name,
         version: entry.version,
         description: frontMatter.description || '',
+        settings: findSettings(raw),
         raw,
         body
       };
     }
   }
   return catalogue;
+}
+
+// Customer-specific values are written in skills as {{env:<schema name>}} and are
+// filled in inside the customer's tenant from its environment variables, so the
+// values never reach this service.
+const SETTING_PATTERN = /\{\{env:([A-Za-z][A-Za-z0-9_]*)\}\}/g;
+
+export function findSettings(text) {
+  return [...new Set([...text.matchAll(SETTING_PATTERN)].map((m) => m[1]))].sort();
 }
 
 export function splitFrontMatter(text) {

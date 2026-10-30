@@ -37,11 +37,26 @@ See the state diagram in the [sample README](../README.md#status-lifecycle-of-a-
 | Review | `chr_reviewid` | Lookup → Credit Hold Review |
 | Action | `chr_action` | Choice: Registered, CaseBuilt, ManualReview, LicenceBlocked, Approved, Rejected, ReleaseRequested, Released, ClosedReleased, ClosedKeptOnHold, Failed |
 | Actor | `chr_actor` | Text — `agent` or the person's email |
-| Details | `chr_details` | Multiline text |
+| Details | `chr_details` | Multiline text (includes skill version and source `live` / `cache` for CaseBuilt rows) |
 | Recommendation snapshot | `chr_recommendationsnapshot` | Text |
 | Timestamp | `chr_timestamp` | Date and time |
 
 Turn on **auditing** for both tables. Make the log append-only via security (reviewers: read only; only the service account can create).
+
+## Table: Skill cache (`chr_skillcache`) — short-lived copies of licensed skills
+
+Used only by *CHR - Load licensed skill (child)* when the licensing service can't be reached.
+
+| Column | Logical name | Type |
+| --- | --- | --- |
+| Skill name | `chr_name` | Text (alternate key) |
+| Content | `chr_content` | Multiline text (max), as received, before settings are filled in |
+| Version | `chr_version` | Text |
+| Notice | `chr_notice` | Text |
+| Cache until | `chr_cacheuntil` | Date and time (set by the service; never past the licence grace end) |
+| Fetched on | `chr_fetchedon` | Date and time |
+
+No user role gets any access; only the flow's service account can create, read, update and delete it. Leave `chr_content` out of auditing and exclude the table from search and the Dataverse MCP server. Rows are deleted when the service says the licence isn't valid or the copy is past `chr_cacheuntil`. A System Administrator can still read it; the contract and the watermark in each skill cover that.
 
 ## Security role: Credit Hold Reviewer
 

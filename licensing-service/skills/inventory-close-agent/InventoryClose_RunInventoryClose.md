@@ -33,14 +33,14 @@ Task **Name** must contain `run inventory close`. Area = Inventory corroborates 
 
 ## Procedure (form tools, signed-in approver's rights)
 1. Open Closing and adjustment → **Close procedure** → **Close**.
-2. Set **Inventory close date** = period end date. Set **Run in the background / Batch processing** = Yes with the batch group `{{BATCH_GROUP}}`.
+2. Set **Inventory close date** = period end date. Set **Run in the background / Batch processing** = Yes with the batch group `{{env:ica_BatchGroup}}`.
 3. Submit. Read back the new closing record and the batch job ID.
 
 ## Policy — *edit to change the policy*
 | Rule | Value |
 |---|---|
-| Batch group | `{{BATCH_GROUP}}` (replace, e.g. `INVCLOSE`) |
-| Preferred start window | Outside 07:00–19:00 company time; if inside, still allowed after approval but mention it |
+| Batch group | `{{env:ica_BatchGroup}}` (customer setting) |
+| Preferred start window | Outside business hours `{{env:ica_BusinessHours}}` (customer setting, company time); if inside, still allowed after approval but mention it |
 | Approver | The close run controller |
 
 ## Report
