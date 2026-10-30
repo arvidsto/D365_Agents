@@ -63,6 +63,8 @@ flowchart LR
 
 ## 6. Selling agents as a subscription (protecting your IP)
 
+For tiers, pricing examples and the contract checklist, see [06 — Commercial model](06-commercial-model.md) and the [pricing calculator](../tools/pricing-calculator/README.md).
+
 If you build agents for customers and charge a monthly fee per agent, keep the valuable part, the business skills and decision prompts, out of the customer's solution:
 
 | Lives in the customer's tenant | Lives in your tenant |
