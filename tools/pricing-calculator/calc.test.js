@@ -93,3 +93,17 @@ test('measured values replace the estimate and narrow the range to the measured 
   close(r.range.high.credits, r.range.expected.credits * 1.15);
   close(r.range.low.credits, r.range.expected.credits * 0.85);
 });
+
+test('flexible (previous) designs keep their original estimates for comparison', () => {
+  const ch = C.calculate(C.fromPreset('credit-hold-flexible'));
+  close(ch.credits.perItem, 92.1);
+  close(ch.credits.total, 27630 + 7458 + 1040);
+  const ic = C.calculate(C.fromPreset('inventory-close-flexible'));
+  close(ic.credits.perItem, 509.8);
+  close(ic.credits.total, 15415.4);
+  // the lean designs are cheaper in every case
+  for (const k of ['credit-hold', 'inventory-close']) {
+    const lean = C.calculate(C.fromPreset(k)), flex = C.calculate(C.fromPreset(k + '-flexible'));
+    for (const c of C.CASES) assert.ok(lean.range[c].credits < flex.range[c].credits);
+  }
+});

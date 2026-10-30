@@ -49,6 +49,21 @@
     }
   };
 
+  // Previous ("flexible", v1) designs: the agent polls and fetches each fact itself.
+  // Kept so the trade-off stays visible and a customer on v1 can still be priced.
+  // See CHANGELOG.md for what changed and how to revert.
+  PRESETS['credit-hold-flexible'] = merge(PRESETS['credit-hold'], {
+    label: 'Credit Hold Review Agent (flexible design)',
+    perItem: { agentActions: 14, generativeAnswers: 1, flowActions: 120 },
+    scheduled: { agentActionsPerRun: 3 }
+  });
+  PRESETS['inventory-close-flexible'] = merge(PRESETS['inventory-close'], {
+    label: 'Inventory Close Agent (flexible design)',
+    perItem: { agentActions: 20, flowActions: 60 },
+    model: { kTokensPerAction: 2 },
+    scheduled: { agentActionsPerRun: 6, flowActionsPerRun: 10 }
+  });
+
   var DEFAULTS = {
     fxUsdToSgd: 1.30,
     creditPriceUsd: 0.01,

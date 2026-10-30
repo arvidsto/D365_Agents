@@ -1,0 +1,408 @@
+<title>D365 Agent Blueprint</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single ledger-like column; layered architecture as stacked bands, process as a numbered rail */
+:root {
+  --paper: #f5f6f4;
+  --surface: #ffffff;
+  --ink: #1b2430;
+  --muted: #5b6672;
+  --line: #d9ddd8;
+  --accent: #1f6f5c;      /* ledger green */
+  --accent-soft: #e2efea;
+  --human: #a8610f;       /* human-in-the-loop amber */
+  --human-soft: #f7ecdc;
+  --band-1: #eef2f0; --band-2: #e5eeea; --band-3: #dbe9e3; --band-4: #d1e3dc; --band-5: #eceeec;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #12171c; --surface: #1a2128; --ink: #e6ebe8; --muted: #9aa6ae; --line: #2c363e;
+  --accent: #5fbf9f; --accent-soft: #19322b; --human: #e2a253; --human-soft: #352816;
+  --band-1: #1a2227; --band-2: #1b272a; --band-3: #1c2c2c; --band-4: #1d322f; --band-5: #1a2025;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #12171c; --surface: #1a2128; --ink: #e6ebe8; --muted: #9aa6ae; --line: #2c363e;
+  --accent: #5fbf9f; --accent-soft: #19322b; --human: #e2a253; --human-soft: #352816;
+  --band-1: #1a2227; --band-2: #1b272a; --band-3: #1c2c2c; --band-4: #1d322f; --band-5: #1a2025;
+  color-scheme: dark }
+
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.55; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 40px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); line-height: 1.05; font-weight: 700; }
+h2 { font-size: 1.7rem; font-weight: 600; }
+h3 { font-size: 1.15rem; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-family: var(--mono); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.lede { font-size: 1.2rem; color: var(--muted); max-width: 62ch; }
+section { display: grid; gap: 20px; }
+.section-head { display: grid; gap: 6px; max-width: 70ch; }
+.section-head p { color: var(--muted); }
+code, .mono { font-family: var(--mono); font-size: .85em; }
+
+/* hero */
+header { display: grid; gap: 18px; border-bottom: 1px solid var(--line); padding-bottom: 36px; }
+.formula { font-family: var(--display); font-size: clamp(1.05rem, 2.2vw, 1.3rem); font-weight: 500; max-width: 60ch;
+  border-left: 3px solid var(--accent); padding-left: 16px; }
+.formula b { color: var(--accent); font-weight: 700; }
+.formula .h { color: var(--human); }
+
+/* analogy */
+.analogy { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.analogy div { background: var(--surface); padding: 16px; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.analogy .q { color: var(--muted); font-size: .9rem; }
+.analogy .a { font-weight: 600; }
+.analogy .w { font-family: var(--mono); font-size: .75rem; color: var(--accent); }
+
+/* layered architecture */
+.layers { display: grid; gap: 6px; }
+.layer { display: grid; grid-template-columns: 210px 1fr; gap: 16px; padding: 14px 16px; border-radius: 4px; align-items: center; }
+.layer .lbl { display: grid; gap: 2px; }
+.layer .num { font-family: var(--mono); font-size: .72rem; color: var(--muted); letter-spacing: .08em; }
+.layer .name { font-family: var(--display); font-weight: 600; font-size: 1.05rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.chip { background: var(--surface); border: 1px solid var(--line); border-radius: 3px; padding: 4px 9px; font-size: .88rem; }
+.chip.h { border-color: var(--human); color: var(--human); }
+.l1 { background: var(--band-1); } .l2 { background: var(--band-2); } .l3 { background: var(--band-3); } .l4 { background: var(--band-4); }
+.l5 { background: var(--band-5); border: 1px dashed var(--line); }
+.arrow { text-align: center; color: var(--muted); font-family: var(--mono); font-size: .8rem; line-height: 1; }
+
+/* golden path */
+.path { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; counter-reset: step; }
+.path li { counter-increment: step; border-top: 3px solid var(--accent); padding-top: 10px; display: grid; gap: 4px; align-content: start; }
+.path li::before { content: counter(step, decimal-leading-zero); font-family: var(--mono); font-size: .75rem; color: var(--accent); }
+.path li.h { border-top-color: var(--human); }
+.path li.h::before { color: var(--human); }
+.path b { font-family: var(--display); font-weight: 600; font-size: 1.02rem; }
+.path span { color: var(--muted); font-size: .92rem; }
+.note { background: var(--accent-soft); padding: 14px 16px; border-radius: 4px; max-width: 80ch; }
+
+/* tables */
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: .93rem; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 600; white-space: nowrap; }
+
+/* autonomy ladder */
+.ladder { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; align-items: end; }
+.rung { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 12px; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.rung .lv { font-family: var(--mono); font-size: .8rem; color: var(--accent); font-weight: 500; }
+.rung b { font-family: var(--display); font-weight: 600; }
+.rung span { font-size: .88rem; color: var(--muted); }
+.rung:nth-child(1) { min-height: 110px; } .rung:nth-child(2) { min-height: 135px; } .rung:nth-child(3) { min-height: 160px; }
+.rung:nth-child(4) { min-height: 185px; } .rung:nth-child(5) { min-height: 210px; }
+.rung.start { border-color: var(--human); box-shadow: inset 0 3px 0 var(--human); }
+
+/* phases */
+.phases { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--surface); }
+.phase { padding: 14px; border-right: 1px solid var(--line); display: grid; gap: 4px; align-content: start; min-width: 0; }
+.phase:last-child { border-right: 0; }
+.phase .p { font-family: var(--mono); font-size: .72rem; color: var(--muted); }
+.phase b { font-family: var(--display); font-weight: 600; font-size: 1.05rem; }
+.phase span { font-size: .88rem; color: var(--muted); }
+.phase .dur { font-family: var(--mono); font-size: .78rem; color: var(--accent); }
+
+/* sample */
+.sample { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 24px; }
+.sample > div { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.states { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-family: var(--mono); font-size: .78rem; }
+.states span { padding: 3px 8px; border-radius: 3px; background: var(--accent-soft); }
+.states span.h { background: var(--human-soft); color: var(--human); }
+.states i { color: var(--muted); font-style: normal; }
+.kpi { display: grid; gap: 10px; }
+.kpi div { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 8px; font-variant-numeric: tabular-nums; }
+.kpi .from { color: var(--muted); text-decoration: line-through; font-size: .9rem; }
+.kpi .to { font-family: var(--display); font-weight: 700; color: var(--accent); font-size: 1.1rem; }
+.sample ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+
+/* running cost */
+.designs { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.design { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.design.rec { border-color: var(--accent); box-shadow: inset 0 3px 0 var(--accent); }
+.design .tagline { color: var(--muted); font-size: .93rem; }
+.design .badge { justify-self: start; font-family: var(--mono); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; padding: 2px 8px; border-radius: 3px; background: var(--accent-soft); color: var(--accent); }
+.design .badge.alt { background: var(--band-5); color: var(--muted); }
+.cost { display: grid; gap: 6px; font-variant-numeric: tabular-nums; }
+.cost div { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.cost b { font-family: var(--display); font-size: 1.15rem; }
+.design.rec .cost b { color: var(--accent); }
+.cost small { display: block; color: var(--muted); font-size: .8rem; }
+.design ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: .93rem; }
+td.y { color: var(--accent); font-weight: 600; }
+.tradeoff td:first-child { white-space: normal; min-width: 150px; }
+
+/* checklist */
+.checks { list-style: none; margin: 0; padding: 0; columns: 2 300px; column-gap: 32px; }
+.checks li { break-inside: avoid; padding: 6px 0 6px 26px; position: relative; border-bottom: 1px solid var(--line); }
+.checks li::before { content: ""; position: absolute; left: 0; top: 11px; width: 13px; height: 13px; border: 1.5px solid var(--accent); border-radius: 2px; }
+
+footer { border-top: 1px solid var(--line); padding-top: 20px; color: var(--muted); font-size: .88rem; display: grid; gap: 6px; }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (max-width: 720px) {
+  .layer { grid-template-columns: 1fr; gap: 8px; }
+  .ladder { grid-template-columns: 1fr; }
+  .rung { min-height: 0 !important; }
+  .sample { grid-template-columns: 1fr; padding: 18px; }
+  .phase { border-right: 0; border-bottom: 1px solid var(--line); }
+  .phase:last-child { border-bottom: 0; }
+}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Dynamics 365 · Copilot Studio · Dataverse · Power Platform</div>
+  <h1>D365 Agent Blueprint</h1>
+  <p class="lede">One architecture and one way of working for building AI agents across Finance &amp; Supply Chain, Business Central, Sales, Customer Service and any Dataverse solution. Based on the patterns in Microsoft's FastTrack AI ERP agent templates.</p>
+  <p class="formula">Every D365 agent is a <b>brain</b> that is <b>woken up</b> by a trigger, <b>looks things up and acts</b> through tools, <b>remembers</b> its work in Dataverse, and <b class="h">asks a person</b> before doing anything risky.</p>
+</header>
+
+<section>
+  <div class="section-head">
+    <div class="eyebrow">Explain it in one minute</div>
+    <h2>An agent is a new team member</h2>
+  </div>
+  <div class="analogy">
+    <div><span class="q">Their job description</span><span class="a">Instructions and skills</span><span class="w">Copilot Studio</span></div>
+    <div><span class="q">What makes them start work</span><span class="a">Triggers</span><span class="w">Email · D365 event · schedule · chat</span></div>
+    <div><span class="q">The systems they log into</span><span class="a">Tools</span><span class="w">MCP servers · agent flows · connectors</span></div>
+    <div><span class="q">The rule books they read</span><span class="a">Knowledge</span><span class="w">SharePoint · files · Dataverse</span></div>
+    <div><span class="q">Their notebook and work log</span><span class="a">Agent tables</span><span class="w">Dataverse: work item · audit · config</span></div>
+    <div><span class="q">Their manager's sign-off</span><span class="a">Human in the loop</span><span class="w">Teams · Outlook · review app</span></div>
+    <div><span class="q">Their access rights</span><span class="a">Identity and security roles</span><span class="w">Entra ID · D365 roles · DLP</span></div>
+    <div><span class="q">Their performance review</span><span class="a">Evaluation and monitoring</span><span class="w">Test sets · analytics · App Insights</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="eyebrow">Reference architecture</div>
+    <h2>Five layers every agent fits into</h2>
+    <p>Work flows down from the top. The platform layer governs the agent and tool layers.</p>
+  </div>
+  <div class="layers">
+    <div class="layer l1"><div class="lbl"><span class="num">LAYER 1</span><span class="name">Channels &amp; triggers</span></div>
+      <div class="chips"><span class="chip">Teams / M365 Copilot</span><span class="chip">Outlook mailbox</span><span class="chip">D365 business events</span><span class="chip">Dataverse row change</span><span class="chip">Schedule</span><span class="chip">D365 in-app</span></div></div>
+    <div class="arrow">↓</div>
+    <div class="layer l2"><div class="lbl"><span class="num">LAYER 2</span><span class="name">Agent · Copilot Studio</span></div>
+      <div class="chips"><span class="chip">Instructions &amp; orchestration</span><span class="chip">Business skills</span><span class="chip">Knowledge</span><span class="chip">Guardrails</span></div></div>
+    <div class="arrow">↓</div>
+    <div class="layer l3"><div class="lbl"><span class="num">LAYER 3</span><span class="name">Tools</span></div>
+      <div class="chips"><span class="chip">ERP MCP</span><span class="chip">Business Central MCP</span><span class="chip">Dataverse MCP</span><span class="chip">Agent flows</span><span class="chip">Connectors</span><span class="chip">AI prompts</span><span class="chip h">Approvals · request for information</span></div></div>
+    <div class="arrow">↓</div>
+    <div class="layer l4"><div class="lbl"><span class="num">LAYER 4</span><span class="name">Data &amp; systems of record</span></div>
+      <div class="chips"><span class="chip">Finance &amp; Supply Chain</span><span class="chip">Business Central</span><span class="chip">Sales · Service · Field Service</span><span class="chip">Agent tables in Dataverse</span><span class="chip">External systems</span></div></div>
+    <div class="layer l5"><div class="lbl"><span class="num">LAYER 5 · CROSS-CUTTING</span><span class="name">Platform services</span></div>
+      <div class="chips"><span class="chip">Entra ID &amp; roles</span><span class="chip">Data policies</span><span class="chip">Solutions &amp; pipelines</span><span class="chip">Monitoring</span><span class="chip">Copilot credits</span></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="eyebrow">Runtime</div>
+    <h2>The golden path</h2>
+    <p>All the FastTrack agents follow this sequence. The Sales Order Agent is a good example: an email with a PDF becomes a sales order in D365.</p>
+  </div>
+  <ol class="path">
+    <li><b>Event arrives</b><span>Email, D365 event, status change or schedule</span></li>
+    <li><b>Register work item</b><span>One Dataverse row with status <span class="mono">New</span></span></li>
+    <li><b>Gather &amp; validate</b><span>Read D365 master data, extract documents</span></li>
+    <li><b>Decide</b><span>Apply policy, recommend with reasons</span></li>
+    <li class="h"><b>Approve or review</b><span>A person signs off on exceptions or risky actions</span></li>
+    <li><b>Act &amp; verify</b><span>Write to D365, then re-read to confirm</span></li>
+    <li><b>Log &amp; notify</b><span>Audit row, email or Teams message</span></li>
+  </ol>
+  <p class="note"><strong>Why a work-item table with a status?</strong> A status change restarts the agent at the right step, a review app shows every item, and every decision leaves an audit row. This is the single most reusable idea in the FastTrack samples.</p>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="eyebrow">Integration</div>
+    <h2>How each Dynamics 365 application plugs in</h2>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Application</th><th>Read</th><th>Write / business logic</th><th>Trigger the agent</th></tr></thead>
+      <tbody>
+        <tr><td>Finance &amp; Supply Chain</td><td>Dynamics 365 ERP MCP, Fin &amp; Ops connector (OData), virtual tables</td><td>ERP MCP data, form and action tools; agent flow calling an OData action or custom X++ service</td><td>Business events, data events, schedule</td></tr>
+        <tr><td>Business Central</td><td>Business Central MCP server (read-only by default), BC connector</td><td>MCP configuration with create, modify and action permissions; AL custom APIs</td><td>BC connector triggers, webhooks, schedule</td></tr>
+        <tr><td>Sales · Service · Field Service</td><td>Dataverse MCP, Dataverse connector, Dataverse knowledge</td><td>Dataverse MCP or connector; Custom APIs</td><td>Row added, modified or deleted</td></tr>
+        <tr><td>Any Power Platform solution</td><td>Dataverse, SharePoint, any connector</td><td>Agent flows, custom connectors</td><td>Any Power Automate trigger</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note"><strong>Rule of thumb.</strong> Use the app's MCP server for reading and for actions a user confirms in chat. Use agent flows for autonomous writes that must run the same way every time and be audited.</p>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="eyebrow">Control</div>
+    <h2>Autonomy ladder, decided per action</h2>
+    <p>Start one level lower than the business asks for, then move up as evaluation results prove accuracy.</p>
+  </div>
+  <div class="ladder">
+    <div class="rung start"><span class="lv">L0</span><b>Inform</b><span>Reads and summarises. The person decides and acts.</span></div>
+    <div class="rung start"><span class="lv">L1</span><b>Recommend</b><span>Proposes a decision with reasons. The person approves and acts.</span></div>
+    <div class="rung"><span class="lv">L2</span><b>Act with approval</b><span>Acts only after a person approves.</span></div>
+    <div class="rung"><span class="lv">L3</span><b>Act, then notify</b><span>Acts within thresholds. People review exceptions.</span></div>
+    <div class="rung"><span class="lv">L4</span><b>Fully autonomous</b><span>Acts and logs. Periodic audit only, after a track record at L3.</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="eyebrow">Solution approach</div>
+    <h2>From idea to production in six phases</h2>
+    <p>Typical effort for a first agent. Later agents reuse components and go faster.</p>
+  </div>
+  <div class="phases">
+    <div class="phase"><span class="p">PHASE 0</span><b>Qualify</b><span>First-party agent, FastTrack template or custom build?</span><span class="dur">1–2 days</span></div>
+    <div class="phase"><span class="p">PHASE 1</span><b>Discover</b><span>Trigger, steps, decision rules, volumes, data access</span><span class="dur">1 week</span></div>
+    <div class="phase"><span class="p">PHASE 2</span><b>Design</b><span>Design canvas, autonomy per action, integration pattern</span><span class="dur">1 week</span></div>
+    <div class="phase"><span class="p">PHASE 3</span><b>Build</b><span>Solution, tables, flows, MCP tools, prompts, agent</span><span class="dur">2–4 weeks</span></div>
+    <div class="phase"><span class="p">PHASE 4</span><b>Test</b><span>Evaluation set, safety and security tests, cost per item</span><span class="dur">1–2 weeks</span></div>
+    <div class="phase"><span class="p">PHASE 5–6</span><b>Deploy &amp; run</b><span>Managed solution, shadow mode, monthly KPI review</span><span class="dur">1 week, then ongoing</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="eyebrow">Worked example</div>
+    <h2>Two sample agents</h2>
+    <p><strong>Credit Hold Review Agent</strong> reviews sales orders on credit hold in D365 Finance, adds customer context from Dataverse, recommends release or keep, and gets a credit manager's approval.</p>
+  </div>
+  <div class="sample">
+    <div>
+      <h3>How it works</h3>
+      <ul>
+        <li>A simple automation checks the D365 hold list every 30 minutes in business hours and starts the agent only when there is a new hold.</li>
+        <li>One flow gathers credit limit, balance, overdue days and order amount, plus open opportunities and dispute cases from Dataverse. In Teams, people can also ask the agent about any hold.</li>
+        <li>An AI prompt applies the credit policy and gives 2–4 reasons that cite the numbers. Flow rules, not the model, decide when a person must review.</li>
+        <li>The credit manager approves in a Teams card. Every step is written to an audit table.</li>
+      </ul>
+      <h3>Status lifecycle</h3>
+      <div class="states">
+        <span>New</span><i>→</i><span>CaseReady</span><i>→</i><span class="h">AwaitingApproval</span><i>→</i><span class="h">Approved</span><i>→</i><span>Released</span><i>→</i><span>Closed</span>
+      </div>
+    </div>
+    <div>
+      <h3>Example targets</h3>
+      <div class="kpi">
+        <div><span>Hold to decision</span><span class="from">1–2 days</span><span class="to">&lt; 2 h</span></div>
+        <div><span>Controller minutes per hold</span><span class="from">10–15</span><span class="to">2–3</span></div>
+        <div><span>Decisions with a recorded reason</span><span class="from">~30%</span><span class="to">100%</span></div>
+      </div>
+      <p style="color:var(--muted);font-size:.9rem">The same pattern (find exceptions, build the case, recommend, approve, act, log) fits invoice mismatches, requisition reviews, SLA escalations and blocked customers in Business Central.</p>
+    </div>
+  </div>
+  <div class="sample">
+    <div>
+      <h3>Second example: Inventory Close Agent</h3>
+      <p>For processes with many steps, the Period Close Agent pattern applies. This agent runs the month-end inventory close checklist in Supply Chain Management: open documents, negative inventory, production orders, journals, the inventory close itself, and the inventory-to-GL reconciliation.</p>
+      <ul>
+        <li><strong>Local behaviors</strong> hold the fixed mechanics: context, gates, status, audit, email. Developers own them.</li>
+        <li><strong>Business skills</strong> hold the policy for each procedure. The cost controller edits them without republishing.</li>
+        <li>A task runs only when <span class="mono">Agent enabled = Yes</span>. Tags and names never authorize.</li>
+        <li>Two flows wrap every task: <em>Start task</em> checks, routes and claims it; <em>Finish task</em> records the result. The agent spends its effort only on the procedure itself.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Safety rules worth reusing</h3>
+      <ul>
+        <li>Exactly one live task per action, or stop</li>
+        <li>Status written only by audited flows and confirmed by a fresh read</li>
+        <li>Claims stop the agent being triggered twice by its own change</li>
+        <li>Cost accountant approves before the close starts, in batch</li>
+        <li>One email sender; recipients come only from Dataverse or D365</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="eyebrow">Running cost</div>
+    <h2>Two ways to build the same agent</h2>
+    <p>Microsoft charges Copilot Studio by the step: about 5 credits each time the agent itself acts, and about 0.13 for each step inside an automated flow. So <em>who</em> does the routine work decides most of the Microsoft bill. Both designs make the same decisions, with the same approvals and audit trail.</p>
+  </div>
+  <div class="designs">
+    <div class="design rec">
+      <span class="badge">Recommended</span>
+      <h3>Lean: flows fetch, the agent judges</h3>
+      <p class="tagline">Automations find new work, read the data and record results. The AI steps in only to judge and explain.</p>
+      <div class="cost">
+        <div><span>Credit Hold, 300 holds a month<small>Microsoft usage, range</small></span><b>S$250<small>S$190–440</small></b></div>
+        <div><span>Inventory Close, 16 tasks a month<small>Microsoft usage, range</small></span><b>S$118<small>S$70–340</small></b></div>
+      </div>
+      <ul>
+        <li>40–50% lower Microsoft usage</li>
+        <li>Same cost every item, easier to test</li>
+        <li>Rules run in flows the agent can't skip</li>
+      </ul>
+    </div>
+    <div class="design">
+      <span class="badge alt">Alternative</span>
+      <h3>Flexible: the agent does it all</h3>
+      <p class="tagline">The agent checks for work itself and looks up each fact one by one, deciding what else to read.</p>
+      <div class="cost">
+        <div><span>Credit Hold, 300 holds a month<small>Microsoft usage, range</small></span><b>S$405<small>S$290–780</small></b></div>
+        <div><span>Inventory Close, 16 tasks a month<small>Microsoft usage, range</small></span><b>S$200<small>S$120–580</small></b></div>
+      </div>
+      <ul>
+        <li>Can dig deeper on unusual cases by itself</li>
+        <li>Faster to change while the process is still settling</li>
+        <li>About 1–2 fewer build days per agent</li>
+      </ul>
+    </div>
+  </div>
+  <div class="tbl">
+    <table class="tradeoff">
+      <thead><tr><th>What matters to you</th><th>Lean</th><th>Flexible</th></tr></thead>
+      <tbody>
+        <tr><td>Monthly Microsoft usage</td><td class="y">Lower, and steadier month to month</td><td>Higher; varies with how much the agent looks up</td></tr>
+        <tr><td>Handling unusual cases</td><td>Uses the facts it was built to read; adding one is a small flow change</td><td class="y">Can decide to look further on its own</td></tr>
+        <tr><td>Changing the process</td><td>Rule changes go through a tested release</td><td class="y">Many changes are a text edit</td></tr>
+        <tr><td>Control and audit</td><td class="y">Checks run in fixed flows that can't be skipped</td><td>Same approvals and audit; more relies on the agent's instructions</td></tr>
+        <tr><td>After a D365 update</td><td>A renamed field needs a quick flow fix</td><td class="y">Usually adapts by itself</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note"><strong>Our default is Lean</strong> for processes that run every day at volume. We use Flexible for pilots, low volumes, or when you want the agent to investigate on its own, and you can switch an agent later without changing your subscription. Figures are Microsoft Copilot credits at about US$0.01 each, excluding your subscription, and are confirmed by measuring a validation run on your data before you commit.</p>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="eyebrow">Go-live gate</div>
+    <h2>Is the agent production-ready?</h2>
+  </div>
+  <ul class="checks">
+    <li>Process owner and security have signed the design canvas</li>
+    <li>Every customer-specific value is an environment variable</li>
+    <li>Connections use least-privilege accounts through connection references</li>
+    <li>Every write to D365 is approved by a person or within a documented threshold</li>
+    <li>Every decision is logged in an audit table</li>
+    <li>Writes are verified by re-reading D365</li>
+    <li>Processing the same item twice cannot create duplicates</li>
+    <li>Evaluation set passed and stored with the solution</li>
+    <li>Data policy allows only the connectors the agent uses</li>
+    <li>Routine work runs in flows, not agent steps, and tools read only the fields they need</li>
+    <li>Copilot credits per item measured and billing configured</li>
+    <li>Runbook and owners documented</li>
+  </ul>
+</section>
+
+<footer>
+  <p>Full playbook, integration decision trees, sample agent build guide, templates and the <a href="https://github.com/arvidsto/d365_agents/blob/claude/amazing-maxwell-7gkim0/CHANGELOG.md">change log</a> of design decisions: <a href="https://github.com/arvidsto/d365_agents/tree/claude/amazing-maxwell-7gkim0">github.com/arvidsto/d365_agents</a></p>
+  <p>Patterns derived from <a href="https://github.com/microsoft/Dynamics-365-FastTrack-Implementation-Assets/tree/master/Agents/AI%20ERP%20Agents">Microsoft FastTrack AI ERP Agent templates</a>. Sample guidance, not a supported Microsoft product. Features such as the ERP, Business Central and Dataverse MCP servers change often; confirm on Microsoft Learn and validate in a non-production environment.</p>
+</footer>
+
+</div>

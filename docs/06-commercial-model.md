@@ -73,7 +73,7 @@ flowchart LR
 | Your cost: 3 hours × SGD 90 + SGD 15 licensing service hosting (see below) | SGD 285 |
 | **Your margin** | **SGD 515 (64%)** |
 
-**Lesson:** design decides the Microsoft bill. A first version that let the agent poll every 30 minutes and fetch each fact with its own MCP call needed about 36,000 credits a month (SGD 405). Moving the polling into a scheduled flow that only starts the agent for a new hold, and gathering the facts in one flow, brought it to about 19,000 (SGD 250) with the same decisions. See the [cost-efficient design checklist](02-solution-approach.md#cost-efficient-design-checklist).
+**Lesson:** design decides the Microsoft bill. A first version that let the agent poll every 30 minutes and fetch each fact with its own MCP call needed about 36,000 credits a month (SGD 405). Moving the polling into a scheduled flow that only starts the agent for a new hold, and gathering the facts in one flow, brought it to about 19,000 (SGD 250) with the same decisions. See the [cost-efficient design checklist](02-solution-approach.md#cost-efficient-design-checklist), and the [change log](../CHANGELOG.md#the-trade-off-in-plain-words) for what the lean design gives up.
 
 At 1,500 holds a month, the calculator moves the customer to **Plus** (SGD 1,400 is cheaper than Standard plus 1,000 items of overage). The value rises to SGD 13,750 a month, the setup pays back in under a month, and your margin rises to SGD 1,115.
 

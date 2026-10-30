@@ -45,6 +45,7 @@ p { margin: 0; }
 
 header { display: grid; gap: 10px; }
 .toolbar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.toolbar .tool { display: inline-flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--surface); }
 .seg button { font: 600 .9rem var(--body); color: var(--ink); background: transparent; border: 0; padding: 7px 12px; cursor: pointer; }
 .seg button + button { border-left: 1px solid var(--line); }
@@ -139,16 +140,21 @@ footer a { color: var(--accent); }
     <h1>Agent Pricing Calculator</h1>
     <p class="muted">Price one agent for one customer: what you charge, what the customer pays Microsoft in Copilot credits, the value it creates, and your margin. Start from a sample agent and change any number.</p>
     <div class="toolbar">
-      <span class="seg-label">Start from</span>
+      <span class="tool"><span class="seg-label">Start from</span>
       <div class="seg" role="group" aria-label="Sample agent">
         <button type="button" id="presetCredit" data-preset="credit-hold" aria-pressed="true">Credit Hold Review</button>
         <button type="button" id="presetInventory" data-preset="inventory-close" aria-pressed="false">Inventory Close</button>
-      </div>
-      <span class="seg-label">View</span>
+      </div></span>
+      <span class="tool"><span class="seg-label">Design</span>
+      <div class="seg" role="group" aria-label="Agent design">
+        <button type="button" data-design="lean" aria-pressed="true" title="Flows do the fetching, the agent does the judgement (current design)">Lean</button>
+        <button type="button" data-design="flexible" aria-pressed="false" title="The agent polls and looks up each fact itself (previous design)">Flexible</button>
+      </div></span>
+      <span class="tool"><span class="seg-label">View</span>
       <div class="seg" role="group" aria-label="View">
         <button type="button" id="viewVendor" data-view="vendor" aria-pressed="true">Internal (with margin)</button>
         <button type="button" id="viewCustomer" data-view="customer" aria-pressed="false">Customer</button>
-      </div>
+      </div></span>
     </div>
   </header>
 
@@ -379,7 +385,9 @@ footer a { color: var(--accent); }
     });
     var p = C.PRESETS[preset];
     document.getElementById('itemsLabel').textContent = 'Work items per month' + (p ? ' (' + p.itemLabel + ')' : '');
-    document.querySelectorAll('[data-preset]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.preset === preset)); });
+    var base = preset.replace(/-flexible$/, ''), design = preset === base ? 'lean' : 'flexible';
+    document.querySelectorAll('[data-preset]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.preset === base)); });
+    document.querySelectorAll('button[data-design]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.design === design)); });
     document.querySelectorAll('button[data-view]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.view === view)); });
     document.getElementById('app').dataset.view = view;
   }
@@ -396,7 +404,10 @@ footer a { color: var(--accent); }
   });
   document.getElementById('form').addEventListener('submit', function (e) { e.preventDefault(); });
   document.querySelectorAll('[data-preset]').forEach(function (b) {
-    b.addEventListener('click', function () { preset = b.dataset.preset; state = clone(C.fromPreset(preset)); fillForm(); render(); save(); });
+    b.addEventListener('click', function () { preset = b.dataset.preset + (/-flexible$/.test(preset) ? '-flexible' : ''); state = clone(C.fromPreset(preset)); fillForm(); render(); save(); });
+  });
+  document.querySelectorAll('button[data-design]').forEach(function (b) {
+    b.addEventListener('click', function () { preset = preset.replace(/-flexible$/, '') + (b.dataset.design === 'flexible' ? '-flexible' : ''); state = clone(C.fromPreset(preset)); fillForm(); render(); save(); });
   });
   document.querySelectorAll('button[data-view]').forEach(function (b) {
     b.addEventListener('click', function () { view = b.dataset.view; fillForm(); render(); save(); });
