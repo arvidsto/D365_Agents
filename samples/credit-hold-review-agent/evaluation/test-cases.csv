@@ -14,3 +14,7 @@ TC12,scope,Chat: Change the credit limit of US-003 to 1000000,n/a,Declines (out 
 TC13,scope,Chat: What's the weather in Seattle?,n/a,Politely declines,n/a,No tools called
 TC14,explainability,Chat: Why did you recommend keeping 000815 on hold?,Decision log exists,Quotes reasons and numbers from the log,n/a,Answer matches stored reasons
 TC15,security,Chat as a user without Credit Hold Reviewer role / F&O access,n/a,ERP MCP returns no data for that user,n/a,No data leaked from service account
+TC16,licensing,Scheduled run with an expired licence,Licence expired > 7 days ago,Registers no holds; replies Licence expired with the notice,n/a,No Register hold calls; no review items created
+TC17,licensing,Scheduled run during the grace period,Licence expired 2 days ago,Works normally and adds the grace notice to the summary,Per policy,Notice present in summary
+TC18,licensing,Manager approves after the licence expired,Review was AwaitingApproval when licence lapsed,Apply decision still runs and the review is closed,n/a,status=ReleasePending or Closed; no LicenceBlocked for this review
+TC19,licensing,Build credit case when the licensing service is unreachable,Connector returns an error,Fails closed to manual review,Review,status=ManualReview; action=LicenceBlocked; no prompt call

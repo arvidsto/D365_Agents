@@ -40,7 +40,7 @@ flowchart TB
 
     subgraph AG["Copilot Studio — Credit Hold Review Agent"]
         INS["Instructions<br/>(agent/instructions.md)"]
-        SKL["Business skill: Credit policy<br/>(agent/credit-policy-skill.md)"]
+        SKL["Credit policy skill<br/>loaded at run time from<br/>your licensing service"]
         KNW["Knowledge: credit policy<br/>document (SharePoint)"]
     end
 
@@ -131,7 +131,7 @@ sequenceDiagram
 | File | Contains |
 | --- | --- |
 | [`agent/instructions.md`](agent/instructions.md) | The agent instructions to paste into Copilot Studio |
-| [`agent/credit-policy-skill.md`](agent/credit-policy-skill.md) | The business policy skill the credit manager owns |
+| [Credit policy skill](../../licensing-service/skills/credit-hold-review-agent/CHR_CreditPolicy.md) | The business policy, now served by the [licensing service](../../licensing-service/README.md), not shipped in the solution |
 | [`agent/tools.md`](agent/tools.md) | Every tool: name, description (for the orchestrator), inputs, outputs |
 | [`flows/agent-flows.md`](flows/agent-flows.md) | Step-by-step specification of the 5 agent flows |
 | [`prompts/credit-recommendation-prompt.md`](prompts/credit-recommendation-prompt.md) | The AI prompt with JSON output schema and examples |
@@ -154,6 +154,7 @@ sequenceDiagram
 | 6 | A **service account** licensed for D365 Finance with a custom role **Credit Hold Agent** (read customers, sales orders, customer transactions, credit hold list) | Autonomous runs have no signed-in user |
 | 7 | Credit managers in Teams; a SharePoint library for the credit policy | Approvals and knowledge |
 | 8 | System Customizer / System Administrator in the dev environment | Building the solution |
+| 9 | A licence key from your [licensing service](../../licensing-service/README.md) and the Licensed Agent Skills custom connector | The credit policy and recommendation prompt are served from it |
 
 ## 5. Build guide (step by step)
 
@@ -178,7 +179,7 @@ Follow the [solution approach](../../docs/02-solution-approach.md#phase-3--build
 10. **Tools → Add a tool → Model Context Protocol → Dynamics 365 ERP MCP.** Connect, then turn off *Allow all* and keep only read/data tools for the first release (see [`agent/tools.md`](agent/tools.md)).
 11. **Tools → Add → Dataverse MCP Server.** Keep only `search`, `read_query`, `fetch`. Turn off all create/update/delete/table tools.
 12. **Tools → Add → Agent flow** for each CHR flow; paste the descriptions from [`agent/tools.md`](agent/tools.md).
-13. **Knowledge → Add** the credit policy document (SharePoint or upload [`knowledge/credit-policy-sample.md`](knowledge/credit-policy-sample.md)). Add the [credit policy skill](agent/credit-policy-skill.md) as a skill (or append it to instructions if skills aren't available in your harness).
+13. **Knowledge → Add** the credit policy document (SharePoint or upload [`knowledge/credit-policy-sample.md`](knowledge/credit-policy-sample.md)). **Tools → Add → Model Context Protocol → Licensed Agent Skills** (see [Licensing](#licensing)); the agent loads the credit policy skill from it at run time.
 14. **Triggers → Add → Recurrence** every 30 minutes with payload `Check for new credit holds in company {CompanyCode}`. Add a Dataverse trigger *When a row is modified* on `chr_creditholdreview` (column `chr_status`) with payload `Continue review {chr_creditholdreviewid}`.
 15. Settings → generative orchestration **on**; general knowledge **off**; web search **off**.
 
@@ -186,6 +187,18 @@ Follow the [solution approach](../../docs/02-solution-approach.md#phase-3--build
 16. Run the [evaluation set](evaluation/README.md). Release gate: all *safety* cases pass, ≥ 90 % correct recommendations.
 17. Publish; add channel **Teams and Microsoft 365 Copilot**; share with credit managers.
 18. Run in **shadow mode** for two weeks (env variable `chr_ApprovalMode = ShadowOnly`): the agent prepares cases and recommendations, managers decide as usual, and you compare.
+
+## Licensing
+
+The policy skill and the recommendation prompt are your IP, so they're served by the [licensing service](../../licensing-service/README.md) instead of being shipped in the customer's solution. The service only receives the licence key, tenant ID, agent ID and skill name, so no customer data leaves the customer's tenant.
+
+| Where | What it fetches | If the licence isn't valid |
+| --- | --- | --- |
+| Agent, start of every scheduled run and chat question about policy | `CHR_CreditPolicy` via MCP `get_skill` | Registers no new holds, replies "Licence <state>: <notice>" |
+| *CHR - Build credit case* flow, every case | `CHR_CreditRecommendationPrompt` via REST `GetSkill` | Routes the case to manual review with the reason, records `LicenceBlocked` |
+| *CHR - Apply decision* (already decided reviews) | Nothing | Always finishes, so no review is left half done |
+
+Setup: import the [connector](../../licensing-service/connector/apiDefinition.swagger.json), store the licence key you issue in `chr_LicenceKey` (secret), set `chr_TenantId`, create the `chr_LicensedSkills` connection, and allow the connector in the data policy. During the expiring and grace periods the agent keeps working and adds the renewal notice to its summaries.
 
 ## 6. Two options for the release action
 

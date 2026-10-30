@@ -23,6 +23,17 @@ The orchestrator picks tools by **name + description + input descriptions**. Cop
 | Tools disabled | `create_record`, `update_record`, `delete_record`, `create_table`, `update_table`, `delete_table`, `list_tables`, `describe_table` |
 | Tables used | `account` (match on account number = F&O customer account), `opportunity` (open, estimated value), `incident` (open cases; dispute / complaint flag) |
 
+### Licensed Skills (your licensing service, MCP)
+
+| Setting | Value |
+| --- | --- |
+| Connection | Custom connector from [`licensing-service/connector`](../../../licensing-service/connector/apiDefinition.swagger.json), API key = the customer's licence key (stored as secret env variable `chr_LicenceKey`) |
+| Server URL | `https://<apim>.azure-api.net/licensing/mcp/credit-hold-review-agent` |
+| Tools enabled | `get_skill`, `licence_status` |
+| Tools disabled | `list_skills` (this agent uses one known skill) |
+| Used for | Loading `CHR_CreditPolicy` at the start of each run. The *Build credit case* flow separately fetches `CHR_CreditRecommendationPrompt` through the REST operation `GetSkill` |
+| Sends | Licence key, tenant ID, agent ID, skill name. **No customer data** |
+
 ## 2. Agent flows
 
 ### CHR - Register hold

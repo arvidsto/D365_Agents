@@ -5,8 +5,9 @@
 | Server | Used by | Keep on | Turn off |
 | --- | --- | --- | --- |
 | **Dynamics 365 ERP MCP** | All business skills | Data tools (find, describe, read); form tools needed by `RunInventoryClose` (open page, set field, select action) | Data create/update/delete tools. If your governance needs it, run `RunInventoryClose` form steps through a separate, approver-only agent flow instead and keep form tools off |
-| **Dataverse MCP Server** | `retrieve-close-checklist`, `produce-close-report`, business-skill discovery | `read_query`, `search`, `fetch` | `create_record`, `update_record`, `delete_record`, all table tools — **all writes go through agent flows** |
+| **Dataverse MCP Server** | `retrieve-close-checklist`, `produce-close-report` | `read_query`, `search`, `fetch` | `create_record`, `update_record`, `delete_record`, all table tools — **all writes go through agent flows** |
 | **Work IQ Mail** | `send-close-notification` only | Send mail | Read/search mailbox tools |
+| **Licensed Skills** (your [licensing service](../../../licensing-service/README.md)), URL `…/licensing/mcp/inventory-close-agent`, API key = `ica_LicenceKey` | `execute-close-task`, `send-close-notification` | `list_skills`, `get_skill`, `licence_status` | – (it has no write tools). Sends only licence key, tenant ID, agent ID and skill name |
 
 > Why are Dataverse writes off on the MCP server? So that every status change and audit row goes through a flow that claims, writes and re-reads. This is the Period Close Agent's "no direct-edit fallback" rule.
 
@@ -16,7 +17,7 @@
 | --- | --- | --- | --- |
 | **ICA - Mark task started** | Moves ONE checklist task to In progress after re-checking Agent enabled and status server-side. Writes a StartClaimed audit row first. Returns verified only after a fresh read. | `taskId` (GUID), `attemptKey` (text), `triggerSource` (text) | `verified` (bool), `alreadyClaimed` (bool), `statusBefore`, `statusAfter`, `message` |
 | **ICA - Mark task completed** | Moves ONE In-progress task to Complete (default) or In review. Writes a CompleteClaimed row first. Returns verified only after a fresh read. | `taskId`, `attemptKey`, `targetStatus` (Complete / InReview), `resultSummary` (text, ≤ 500 chars, no personal data) | `verified`, `statusBefore`, `statusAfter`, `message` |
-| **ICA - Record task audit** | Writes ONE terminal audit row with a deterministic attempt key. Idempotent: returns duplicate = true if the key exists. | `attemptKey`, `taskId`, `outcome`, `resultCode`, `errorStage`, `errorCode`, `statusBefore`, `statusAfter`, `statusVerified`, `skillName`, `skillHash`, `postingPolicy`, `triggerSource` | `auditId`, `duplicate` |
+| **ICA - Record task audit** | Writes ONE terminal audit row with a deterministic attempt key. Idempotent: returns duplicate = true if the key exists. | `attemptKey`, `taskId`, `outcome`, `resultCode`, `errorStage`, `errorCode`, `statusBefore`, `statusAfter`, `statusVerified`, `skillName`, `skillVersion`, `postingPolicy`, `triggerSource` | `auditId`, `duplicate` |
 | **ICA - Request approval** | Asks the close run controller to approve ONE action (inventory close) in Teams and records the decision for that task and attempt key. Returns Pending if no answer within the wait window. | `taskId`, `attemptKey`, `summary` (text) | `decision` (Approved / Rejected / Pending), `approver`, `approvalId` |
 | **ICA - Wait** | Waits a short number of seconds (max 60) before a re-read, for D365 eventual consistency. | `seconds` | `ok` |
 

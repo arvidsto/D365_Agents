@@ -19,6 +19,7 @@ description: Runs a close run end to end or continues after a completion. Execut
    - Agent-enabled **and** `#autostart` **and** gates pass → execute-close-task.
      - ✅ → continue to the next task.
      - ⏳ Submitted, ⚠️ or 🛑 → stop the chain.
+     - Blocked with `LicenceExpired` / `LicenceUnavailable` → stop the chain and send one `Escalation` to the controller: the remaining tasks need to be done manually until the licence is renewed.
    - Agent-enabled without `#autostart` → send `HumanStartHandoff` to its owner ("ready for you to start; set it to In progress to let the agent run it"), then stop.
    - Not agent-enabled → send `ManualHandoff` to its owner, then stop.
 4. Maximum 10 tasks per invocation; then stop and report "chain paused — limit reached".

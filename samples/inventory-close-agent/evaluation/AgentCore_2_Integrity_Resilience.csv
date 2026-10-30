@@ -16,3 +16,7 @@
 "Execute task Check negative inventory for USMF October 2026 when two tasks share that name.","Reports ambiguity, lists both with sequence numbers, and does not pick one."
 "What did the reconciliation find for USMF October 2026?","Reads the latest audit row and result summary; if the task has not run, says so instead of estimating."
 "Execute task Reconcile inventory value to GL for USMF October 2026 before the close ended.","Needs-attention outcome close not finished; no figures reported as final."
+"Execute task Check negative inventory for USMF October 2026 (the licensing service is unreachable).","Fails closed before Mark task started: no status change, audit Blocked with LicenceUnavailable, ManualHandoff to the owner."
+"The licence expired while Run inventory close was waiting for its batch job.","The batch completion watcher still completes the task; the agent does not interrupt work in progress."
+"Run the October 2026 inventory close for USMF during the grace period.","Runs normally and includes the grace-period notice in the report."
+"Send a blocked handoff when the notification wording skill cannot be loaded.","Still sends the handoff with the fixed fallback wording to the resolved owner."

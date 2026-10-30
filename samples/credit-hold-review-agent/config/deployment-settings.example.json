@@ -1,22 +1,87 @@
 {
   "EnvironmentVariables": [
-    { "SchemaName": "chr_CompanyCodes", "Value": "USMF" },
-    { "SchemaName": "chr_FinOpsBaseUrl", "Value": "https://<your-environment>.operations.dynamics.com" },
-    { "SchemaName": "chr_CreditManagerEmail", "Value": "<credit.manager@contoso.com>" },
-    { "SchemaName": "chr_ReviewerEmail", "Value": "<credit.team@contoso.com>" },
-    { "SchemaName": "chr_SalesOpsEmail", "Value": "<sales.ops@contoso.com>" },
-    { "SchemaName": "chr_ApprovalMode", "Value": "ShadowOnly" },
-    { "SchemaName": "chr_ReleaseMode", "Value": "Manual" },
-    { "SchemaName": "chr_ReleaseReasonCode", "Value": "" },
-    { "SchemaName": "chr_MaxOverdueDaysForRelease", "Value": "15" },
-    { "SchemaName": "chr_AlwaysHumanOrderAmount", "Value": "100000" },
-    { "SchemaName": "chr_StrategicOpportunityValue", "Value": "250000" },
-    { "SchemaName": "chr_UseCrmContext", "Value": "yes" }
+    {
+      "SchemaName": "chr_CompanyCodes",
+      "Value": "USMF"
+    },
+    {
+      "SchemaName": "chr_FinOpsBaseUrl",
+      "Value": "https://<your-environment>.operations.dynamics.com"
+    },
+    {
+      "SchemaName": "chr_CreditManagerEmail",
+      "Value": "<credit.manager@contoso.com>"
+    },
+    {
+      "SchemaName": "chr_ReviewerEmail",
+      "Value": "<credit.team@contoso.com>"
+    },
+    {
+      "SchemaName": "chr_SalesOpsEmail",
+      "Value": "<sales.ops@contoso.com>"
+    },
+    {
+      "SchemaName": "chr_ApprovalMode",
+      "Value": "ShadowOnly"
+    },
+    {
+      "SchemaName": "chr_ReleaseMode",
+      "Value": "Manual"
+    },
+    {
+      "SchemaName": "chr_ReleaseReasonCode",
+      "Value": ""
+    },
+    {
+      "SchemaName": "chr_MaxOverdueDaysForRelease",
+      "Value": "15"
+    },
+    {
+      "SchemaName": "chr_AlwaysHumanOrderAmount",
+      "Value": "100000"
+    },
+    {
+      "SchemaName": "chr_StrategicOpportunityValue",
+      "Value": "250000"
+    },
+    {
+      "SchemaName": "chr_UseCrmContext",
+      "Value": "yes"
+    },
+    {
+      "SchemaName": "chr_LicenceKey",
+      "Value": "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.KeyVault/vaults/<vault>/secrets/<secret-name>"
+    },
+    {
+      "SchemaName": "chr_TenantId",
+      "Value": "<customer-entra-tenant-id>"
+    }
   ],
   "ConnectionReferences": [
-    { "LogicalName": "chr_Dataverse", "ConnectionId": "<connection-id>", "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps" },
-    { "LogicalName": "chr_Office365Outlook", "ConnectionId": "<connection-id>", "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_office365" },
-    { "LogicalName": "chr_Teams", "ConnectionId": "<connection-id>", "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_teams" },
-    { "LogicalName": "chr_FinOps", "ConnectionId": "<connection-id>", "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_dynamicsax" }
+    {
+      "LogicalName": "chr_Dataverse",
+      "ConnectionId": "<connection-id>",
+      "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+    },
+    {
+      "LogicalName": "chr_Office365Outlook",
+      "ConnectionId": "<connection-id>",
+      "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+    },
+    {
+      "LogicalName": "chr_Teams",
+      "ConnectionId": "<connection-id>",
+      "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_teams"
+    },
+    {
+      "LogicalName": "chr_FinOps",
+      "ConnectionId": "<connection-id>",
+      "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_dynamicsax"
+    },
+    {
+      "LogicalName": "chr_LicensedSkills",
+      "ConnectionId": "<connection-id>",
+      "ConnectorId": "/providers/Microsoft.PowerApps/apis/<licensed-skills-custom-connector-id>"
+    }
   ]
 }

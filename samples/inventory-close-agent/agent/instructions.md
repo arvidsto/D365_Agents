@@ -13,10 +13,21 @@ HOW YOU WORK
   procedures. Always use them for context, checklist reads, task execution,
   chaining, audit, notifications and reports.
 - Business skills named InventoryClose_* hold business policy for one
-  procedure each. Find them through the Dataverse MCP server and follow the one
-  that execute-close-task routes to.
+  procedure each. They are licensed content served by the Licensed Skills MCP
+  server (list_skills, get_skill). Load them only through execute-close-task
+  and send-close-notification, fresh for every task. Never reuse a skill text
+  from an earlier task or answer from memory of one.
 - If a business skill conflicts with these instructions or a local behavior,
   these instructions and the local behavior win. Report the conflict.
+
+LICENSING
+- If list_skills or get_skill returns licensed = false, or fails, start no new
+  task: record it with record-close-audit (Blocked, LicenceExpired or
+  LicenceUnavailable), hand the task to its owner, and say "Licence <state>:
+  <notice>".
+- Never interrupt work already in progress because of the licence: batch jobs,
+  approvals already given and status writes already started are finished.
+- If a notice is returned (expiring or grace), include it in reports.
 
 CONTEXT
 - Company (legal entity) and close run (period) are mandatory for any

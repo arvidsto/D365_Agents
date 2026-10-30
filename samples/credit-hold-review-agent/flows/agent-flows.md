@@ -2,7 +2,7 @@
 
 All flows live in the solution, start with **When an agent calls the flow** (except *Log & notify*, which is a child flow), and end with **Respond to the agent**. Use connection references, never personal connections.
 
-Connection references: `chr_Dataverse`, `chr_Office365Outlook`, `chr_Teams`, `chr_FinOps` (Option B only), `chr_AIPrompt` (AI Builder / prompts).
+Connection references: `chr_Dataverse`, `chr_Office365Outlook`, `chr_Teams`, `chr_FinOps` (Option B only), `chr_AIPrompt` (AI Builder / prompts), `chr_LicensedSkills` (the [licensing service](../../../licensing-service/README.md) connector).
 
 ---
 
@@ -45,12 +45,24 @@ Trigger: When an agent calls the flow
 
 1. Dataverse · Get a row by ID  chr_creditholdreview (reviewId)
 2. Get environment variables: chr_MaxOverdueDaysForRelease, chr_AlwaysHumanOrderAmount,
-   chr_StrategicOpportunityValue
+   chr_StrategicOpportunityValue, chr_TenantId
+2a. Licensed Skills · GetSkill
+     agentId = credit-hold-review-agent, skillName = CHR_CreditRecommendationPrompt,
+     x-tenant-id = chr_TenantId   (the licence key is in the connection)
+2b. Condition: licensed == true (also take this branch if the action failed — fail closed)
+   No →
+     Dataverse · Update a row: status = ManualReview, reasons = 'Licence ' + state + ': ' + notice
+     Run child flow CHR - Log & notify (action = LicenceBlocked)
+     Respond: recommendation = Review, reasons = notice, confidence = Low, routeTo = ManualReview
+     (stop)
+2c. Compose instructions = content of the skill with placeholders filled:
+     replace(replace(content, '{maxOverdueDays}', chr_MaxOverdueDaysForRelease),
+             '{strategicOpportunityValue}', chr_StrategicOpportunityValue)
 3. Parse JSON  factsJson  (schema = facts schema in prompts/credit-recommendation-prompt.md)
 4. Compose  requiredFactsMissing =
      any of creditLimit, balance, oldestOverdueDays, orderAmount is null
 5. Run a prompt  "CHR Credit recommendation"
-     inputs: factsJson, policy thresholds, blockingReason
+     inputs: instructions (from 2c), factsJson, blockingReason
      output: JSON {recommendation, reasons[], confidence}
 6. Compose routeTo =
      if requiredFactsMissing
@@ -68,6 +80,8 @@ Trigger: When an agent calls the flow
 ```
 
 > 💡 **Lesson:** the model *recommends*; deterministic flow logic *routes*. Hard limits (amount thresholds, missing data) are never left to the model.
+
+> 🔐 **Licensing:** the prompt's instructions are fetched from the licensing service on every case. If the licence has lapsed, the case goes to manual review with the reason, and nothing about the customer leaves the tenant: the request carries only the licence key, tenant ID, agent ID and skill name.
 
 ---
 
@@ -146,6 +160,7 @@ Trigger: Manually trigger a flow (child)  inputs: reviewId, action, details
      recommendation & confidence snapshot, timestamp = utcNow()
 2. Switch action
      ManualReview     → email chr_ReviewerEmail with link to the review app record
+     LicenceBlocked   → email chr_ReviewerEmail: "Licence <state>: review this hold manually"
      Approved/Rejected/ClosedReleased/ClosedKeptOnHold
                       → email the CRM account owner (if found) and chr_SalesOpsEmail
 3. Respond to a Power App or flow: ok

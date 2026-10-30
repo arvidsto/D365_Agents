@@ -16,6 +16,8 @@
 | `chr_AlwaysHumanOrderAmount` | Number | `100000` | Orders above this always go to ManualReview |
 | `chr_StrategicOpportunityValue` | Number | `250000` | CRM context threshold |
 | `chr_UseCrmContext` | Yes/No | `Yes` | Turn Dataverse MCP context on/off |
+| `chr_LicenceKey` | **Secret** (Azure Key Vault) | – | Licence key issued by you; used by the Licensed Skills connection |
+| `chr_TenantId` | Text | – | Customer's Microsoft Entra tenant ID; sent so the licence can only be used in this tenant |
 
 ## Connection references
 
@@ -27,3 +29,4 @@
 | `chr_FinOps` | Fin & Ops Apps (Dynamics 365) | Service account with *Credit Hold Agent* role — Option B only |
 | `chr_ERPMCP` | Dynamics 365 ERP MCP | Service account (scheduled) / end user (chat) |
 | `chr_DataverseMCP` | Dataverse MCP Server | Service account (scheduled) / end user (chat) |
+| `chr_LicensedSkills` | Licensed Agent Skills (custom connector) | API key = `chr_LicenceKey` |

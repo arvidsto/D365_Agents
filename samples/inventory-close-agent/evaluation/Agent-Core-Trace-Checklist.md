@@ -22,6 +22,12 @@ A test-set score can't prove what happened inside tools. For a sample of runs, o
 - [ ] Exactly one terminal audit row per decision; no retries after uncertain writes.
 - [ ] Audit rows contain no prompts, payloads, recipients, URLs or personal data.
 
+## Licensing
+- [ ] Skills were loaded with `list_skills` / `get_skill` for each task, before Mark task started.
+- [ ] With an expired or unreachable licence, no status changed and the audit shows `LicenceExpired` / `LicenceUnavailable`.
+- [ ] Calls to the licensing service carried only licence key, tenant ID, agent ID and skill name (check the connector request in the flow/agent trace).
+- [ ] Work in progress (batch, approvals) finished after the licence lapsed.
+
 ## Writes to D365
 - [ ] No create/update/delete data tool calls on ERP MCP.
 - [ ] Form tool calls happened only inside Run inventory close, once per attempt key.

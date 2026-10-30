@@ -8,7 +8,7 @@ This sample deliberately copies the **architecture of Microsoft's FastTrack [Per
 | --- | --- |
 | **D365 apps** | Supply Chain Management (cost management, inventory, production), Finance (general ledger) |
 | **Platform** | Copilot Studio (Microsoft Copilot harness with skills), agent flows, Dataverse, Work IQ Mail, Teams |
-| **Tools** | Dynamics 365 ERP MCP, Dataverse MCP, Work IQ Mail MCP, 8 agent flows |
+| **Tools** | Dynamics 365 ERP MCP, Dataverse MCP, Work IQ Mail MCP, Licensed Skills MCP (your [licensing service](../../licensing-service/README.md)), 8 agent flows |
 | **Pattern** | Local behaviors (developer-owned) + business skills (business-owned) + authorization gate + verified status + audit |
 | **Status** | Learning sample / blueprint, built from the design in this folder |
 
@@ -20,7 +20,7 @@ The Credit Hold sample ([../credit-hold-review-agent](../credit-hold-review-agen
 
 | # | Period Close Agent idea | What it means | How this sample applies it |
 | --- | --- | --- | --- |
-| 1 | **Local behaviors vs business skills** | 13 developer-owned *local behaviors* hold the invariant mechanics (context, gates, status, audit, email). Business-owned *skills* hold policy (thresholds, wording). Local rules always win. | 7 local behaviors in [`agent/local-behaviors/`](agent/local-behaviors/); 7 business skills in [`business-skills/`](business-skills/) |
+| 1 | **Local behaviors vs business skills** | 13 developer-owned *local behaviors* hold the invariant mechanics (context, gates, status, audit, email). Business-owned *skills* hold policy (thresholds, wording). Local rules always win. | 7 local behaviors in [`agent/local-behaviors/`](agent/local-behaviors/) (shipped to the customer); 7 business skills served at run time by the [licensing service](../../licensing-service/skills/inventory-close-agent/) (your IP, never shipped) |
 | 2 | **One authorization gate** | A task runs only if `Agent enabled = Yes` on the live D365 task. Names, tags and areas never authorize. | `ica_agentenabled` on each checklist task, set only by the close owner |
 | 3 | **Exact records** | Every action resolves exactly one live task. Zero or several matches → stop. | `execute-close-task` uses `TOP 2` and stops unless exactly one row |
 | 4 | **Verified status changes** | Status is written only by two audited flows and proved by a fresh read. No direct-edit fallback. | `ICA - Mark task started` / `ICA - Mark task completed` |
@@ -73,7 +73,7 @@ flowchart TB
             L6["send-close-notification"]
             L7["produce-close-report"]
         end
-        subgraph BS["Business skills — owned by the cost controller"]
+        subgraph BS["Business skills — fetched at run time from your licensing service"]
             B1["OpenDocumentsCheck"]
             B2["NegativeInventoryCheck"]
             B3["ProductionOrderReview"]
@@ -86,8 +86,9 @@ flowchart TB
 
     subgraph TOOLS["Tools"]
         MCP1["Dynamics 365 ERP MCP<br/>(signed-in user)"]
-        MCP2["Dataverse MCP<br/>checklist · skills"]
+        MCP2["Dataverse MCP<br/>checklist"]
         MCP3["Work IQ Mail<br/>(one governed sender)"]
+        MCP4["Licensed Skills MCP<br/>(your tenant: key in, skill text out)"]
         F1["ICA - Mark task started"]
         F2["ICA - Mark task completed"]
         F3["ICA - Record task audit"]
@@ -114,7 +115,8 @@ flowchart TB
     T2 --> E1 --> AGENT
     T3 --> E2 --> AGENT
     T4 --> E4 --> AGENT
-    AGENT --> MCP1 & MCP2 & MCP3 & F1 & F2 & F3 & F4 & F5
+    AGENT --> MCP1 & MCP2 & MCP3 & MCP4 & F1 & F2 & F3 & F4 & F5
+    MCP4 -.-> BS
     MCP1 --> SCM
     MCP2 --> DV
     F1 & F2 & F3 & F4 --> DV
@@ -160,6 +162,7 @@ sequenceDiagram
     actor U as Cost accountant
     participant A as Agent (local behaviors)
     participant DV as Dataverse (checklist, audit)
+    participant L as Licensed Skills MCP
     participant S as Business skill
     participant ERP as ERP MCP (SCM)
     participant F as Agent flows
@@ -170,7 +173,9 @@ sequenceDiagram
     A->>A: Gates: exactly one row · Agent enabled · NotStarted/Returned · dependencies complete · run not locked
     A->>F: ICA - Mark task started (writes StartClaimed, status, re-reads)
     F-->>A: verified = true
-    A->>S: Load routed business skill (exactly one)
+    A->>L: list_skills → route by description → get_skill (exactly one)
+    L-->>A: Skill text, or licensed=false → stop before any status change
+    A->>S: Follow the skill
     S->>ERP: Live reads (on-hand by item and dimension)
     S-->>A: Outcome ✅ / ⚠️ / 🛑 + report
     alt ✅ Success
@@ -189,7 +194,7 @@ sequenceDiagram
 | --- | --- |
 | [`agent/instructions.md`](agent/instructions.md) | Core agent instructions (orchestrator and safety rules) |
 | [`agent/local-behaviors/`](agent/local-behaviors/) | 7 developer-owned skills in `SKILL.md` format |
-| [`business-skills/`](business-skills/) | 7 business-owned procedure skills, 1 notification-wording policy and a [template](business-skills/InventoryClose_SkillTemplate.md) |
+| [`../../licensing-service/skills/inventory-close-agent/`](../../licensing-service/skills/inventory-close-agent/) | 7 procedure skills and 1 notification-wording policy, **served by the licensing service** and never shipped in the solution. [Template](../../licensing-service/skills/SKILL_TEMPLATE.md) |
 | [`agent/tools.md`](agent/tools.md) | MCP servers (with tools to turn off), agent flows, triggers |
 | [`flows/agent-flows.md`](flows/agent-flows.md) | Specs for 5 agent flows and 4 event / scheduled flows |
 | [`dataverse/tables.md`](dataverse/tables.md) | Close run, close task, audit and approval tables; security roles; review app |
@@ -216,10 +221,10 @@ sequenceDiagram
 2. **Dataverse.** Create the four tables, choices, alternate keys and roles from [`dataverse/tables.md`](dataverse/tables.md). Turn on auditing. Build the *Inventory Close Compliance Review* app. Import [`data/sample-close-checklist.csv`](data/sample-close-checklist.csv) into `ica_closetask` for one close run.
 3. **Agent flows.** Build the five agent flows in [`flows/agent-flows.md`](flows/agent-flows.md). Test *Mark task started* twice on the same task: the second call must return `alreadyClaimed` and change nothing.
 4. **Agent.** Create the agent on the Microsoft Copilot harness. Paste [`agent/instructions.md`](agent/instructions.md). Add each file in [`agent/local-behaviors/`](agent/local-behaviors/) as a skill (upload the Markdown).
-5. **Business skills.** Create each file in [`business-skills/`](business-skills/) as a Dataverse business skill (or upload as a skill if business skills aren't available), keeping the unique name `InventoryClose_*`.
-6. **Tools.** Add ERP MCP, Dataverse MCP and Work IQ Mail; switch off the tools listed in [`agent/tools.md`](agent/tools.md). Add the agent flows as tools.
+5. **Licensed skills.** Issue a licence for the customer with the [licensing service](../../licensing-service/README.md#6-deploy-to-azure), store the key in `ica_LicenceKey` (secret) and create the `ica_LicensedSkills` connection. The business skills are not created in the customer's environment; see [Licensing](#licensing).
+6. **Tools.** Add ERP MCP, Dataverse MCP, Work IQ Mail and Licensed Skills MCP (`https://<apim>.azure-api.net/licensing/mcp/inventory-close-agent`); switch off the tools listed in [`agent/tools.md`](agent/tools.md). Add the agent flows as tools.
 7. **Event & scheduled flows.** Build the four flows; leave them **off** until validation passes.
-8. **Validate.** Run both 50-case sets and the business-skill tests in [`evaluation/`](evaluation/), human-review every response, complete the trace checklist.
+8. **Validate.** Run both core test sets and the business-skill tests in [`evaluation/`](evaluation/), human-review every response, complete the trace checklist.
 9. **Release.** Restrict access to the security group, publish to Teams and Microsoft 365 Copilot, turn on *Run human-started task*; turn on *Auto-run next* when the team is ready.
 
 ## 7. Safety model at a glance
@@ -243,9 +248,22 @@ sequenceDiagram
 
 Continue the close manually in D365; the audit table shows what the agent touched. Roll back by importing the previous solution version.
 
+## Licensing
+
+The business skills are the valuable part of this agent, so they live in your [licensing service](../../licensing-service/README.md), not in the customer's solution. The customer's environment does all the data processing; the service only receives the licence key, tenant ID, agent ID and skill name.
+
+| Where | Call | If the licence isn't valid |
+| --- | --- | --- |
+| `execute-close-task` Step 2, **before** Mark started | `list_skills`, then `get_skill` for the routed skill | Task not started, no status change. Audit `Blocked` / `LicenceExpired` (or `LicenceUnavailable` if the service can't be reached). `ManualHandoff` to the owner |
+| `run-close-chain` | Stops at the first `LicenceExpired` task | Hands the rest of the close to people |
+| `send-close-notification` | `get_skill InventoryClose_Notifications` for wording | Uses fixed plain wording, so owners are still told |
+| Batch completion watcher, approvals already given | No skill needed | Always finishes: work in progress is never cut off |
+
+During the expiring and grace periods the agent works normally and adds the renewal notice to its reports.
+
 ## 9. Extending
 
-- **Add a procedure:** copy [`business-skills/InventoryClose_SkillTemplate.md`](business-skills/InventoryClose_SkillTemplate.md), give it a unique routing phrase, add a checklist task with that phrase, write 5 business-skill tests. No republish needed.
+- **Add a procedure:** copy the [skill template](../../licensing-service/skills/SKILL_TEMPLATE.md) into `licensing-service/skills/inventory-close-agent/`, give it a unique routing phrase, add it to `manifest.json`, add a checklist task with that phrase, write 5 business-skill tests, and redeploy the service. Customers get it on their next task; no agent republish needed.
 - **Use the Financial Period Close Workspace instead of Dataverse tables:** point `retrieve-close-checklist` and the status flows at the period close task entity (as the Period Close Agent does) and keep everything else.
 - **Plug into Microsoft's Period Close Agent:** the business skills here follow the same sections as `PeriodClose_SkillTemplate.md`. Renamed to `PeriodClose_*` and routed to tasks in the *Inventory* area, they can run inside the Period Close Agent; validate with its evaluation sets first.
 

@@ -1,16 +1,63 @@
 {
   "EnvironmentVariables": [
-    { "SchemaName": "ica_FinOpsBaseUrl", "Value": "https://<your-environment>.operations.dynamics.com" },
-    { "SchemaName": "ica_ReviewAppUrl", "Value": "https://<org>.crm.dynamics.com/main.aspx?appid=<app-id>" },
-    { "SchemaName": "ica_LeadDays", "Value": "1" },
-    { "SchemaName": "ica_EscalationDays", "Value": "2" },
-    { "SchemaName": "ica_ApprovalWaitMinutes", "Value": "60" },
-    { "SchemaName": "ica_MaxChainTasks", "Value": "10" }
+    {
+      "SchemaName": "ica_FinOpsBaseUrl",
+      "Value": "https://<your-environment>.operations.dynamics.com"
+    },
+    {
+      "SchemaName": "ica_ReviewAppUrl",
+      "Value": "https://<org>.crm.dynamics.com/main.aspx?appid=<app-id>"
+    },
+    {
+      "SchemaName": "ica_LeadDays",
+      "Value": "1"
+    },
+    {
+      "SchemaName": "ica_EscalationDays",
+      "Value": "2"
+    },
+    {
+      "SchemaName": "ica_ApprovalWaitMinutes",
+      "Value": "60"
+    },
+    {
+      "SchemaName": "ica_MaxChainTasks",
+      "Value": "10"
+    },
+    {
+      "SchemaName": "ica_LicenceKey",
+      "Value": "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.KeyVault/vaults/<vault>/secrets/<secret-name>"
+    },
+    {
+      "SchemaName": "ica_TenantId",
+      "Value": "<customer-entra-tenant-id>"
+    }
   ],
   "ConnectionReferences": [
-    { "LogicalName": "ica_Dataverse", "ConnectionId": "<connection-id>", "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps" },
-    { "LogicalName": "ica_Teams", "ConnectionId": "<connection-id>", "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_teams" },
-    { "LogicalName": "ica_FinOps", "ConnectionId": "<connection-id>", "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_dynamicsax" },
-    { "LogicalName": "ica_Agents", "ConnectionId": "<connection-id>", "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_agentnode" }
+    {
+      "LogicalName": "ica_Dataverse",
+      "ConnectionId": "<connection-id>",
+      "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+    },
+    {
+      "LogicalName": "ica_Teams",
+      "ConnectionId": "<connection-id>",
+      "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_teams"
+    },
+    {
+      "LogicalName": "ica_FinOps",
+      "ConnectionId": "<connection-id>",
+      "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_dynamicsax"
+    },
+    {
+      "LogicalName": "ica_Agents",
+      "ConnectionId": "<connection-id>",
+      "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_agentnode"
+    },
+    {
+      "LogicalName": "ica_LicensedSkills",
+      "ConnectionId": "<connection-id>",
+      "ConnectorId": "/providers/Microsoft.PowerApps/apis/<licensed-skills-custom-connector-id>"
+    }
   ]
 }

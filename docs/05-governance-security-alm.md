@@ -60,3 +60,13 @@ flowchart LR
 | Flow failures | Power Automate run history; alert on failures |
 | Business outcomes | The agent's own **audit table** + a model-driven app or Power BI report |
 | Credits | Power Platform admin center — capacity & consumption |
+
+## 6. Selling agents as a subscription (protecting your IP)
+
+If you build agents for customers and charge a monthly fee per agent, keep the valuable part, the business skills and decision prompts, out of the customer's solution:
+
+| Lives in the customer's tenant | Lives in your tenant |
+| --- | --- |
+| Agent, safety instructions, local behaviors, flows, tables, review app, MCP connections. **All processing of customer data** | Business skills and prompt instructions, licence table, licence check |
+
+The agent fetches each skill at run time from the [licensing service](../licensing-service/README.md), sending only a licence key, tenant ID, agent ID and skill name. When the licence lapses (after a warning period and a grace period), new tasks stop safely and work already in progress finishes. Because no business data or personal data reaches your tenant, PDPA obligations on your side are kept to a minimum; confirm with counsel. Customers pay Microsoft directly for their D365 licences and Copilot credits; your fee covers the agent, updates and support.

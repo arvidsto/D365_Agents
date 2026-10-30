@@ -35,7 +35,7 @@ See the state diagram in the [sample README](../README.md#status-lifecycle-of-a-
 | --- | --- | --- |
 | Name | `chr_name` | Autonumber `CDL-{SEQNUM:6}` |
 | Review | `chr_reviewid` | Lookup → Credit Hold Review |
-| Action | `chr_action` | Choice: Registered, CaseBuilt, ManualReview, Approved, Rejected, ReleaseRequested, Released, ClosedReleased, ClosedKeptOnHold, Failed |
+| Action | `chr_action` | Choice: Registered, CaseBuilt, ManualReview, LicenceBlocked, Approved, Rejected, ReleaseRequested, Released, ClosedReleased, ClosedKeptOnHold, Failed |
 | Actor | `chr_actor` | Text — `agent` or the person's email |
 | Details | `chr_details` | Multiline text |
 | Recommendation snapshot | `chr_recommendationsnapshot` | Text |

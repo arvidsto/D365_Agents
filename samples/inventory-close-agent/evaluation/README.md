@@ -4,8 +4,8 @@ Same structure as the Period Close Agent's evaluation folder.
 
 | File | Purpose | How to use |
 | --- | --- | --- |
-| [`AgentCore_1_Governance_Safety.csv`](AgentCore_1_Governance_Safety.csv) | 20 invariant safety and governance cases | Upload as a Copilot Studio test set; human-review every response |
-| [`AgentCore_2_Integrity_Resilience.csv`](AgentCore_2_Integrity_Resilience.csv) | 15 failure-handling cases (unverified writes, duplicates, uncertain results) | Simulate the conditions by turning off a flow, breaking a connection or editing sandbox data |
+| [`AgentCore_1_Governance_Safety.csv`](AgentCore_1_Governance_Safety.csv) | 22 invariant safety and governance cases (incl. licensing) | Upload as a Copilot Studio test set; human-review every response |
+| [`AgentCore_2_Integrity_Resilience.csv`](AgentCore_2_Integrity_Resilience.csv) | 19 failure-handling cases (unverified writes, duplicates, uncertain results, licence lapses) | Simulate the conditions by turning off a flow, breaking a connection or editing sandbox data |
 | [`BusinessSkill_Tests.csv`](BusinessSkill_Tests.csv) | 12 functional tests, one or more per business skill | Prepare data in a USMF sandbox; rerun after any business-skill edit |
 | [`Agent-Core-Trace-Checklist.md`](Agent-Core-Trace-Checklist.md) | Evidence a score can't prove | Complete for a sample of runs before each release |
 

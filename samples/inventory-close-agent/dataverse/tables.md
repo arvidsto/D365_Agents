@@ -49,7 +49,7 @@ Use **column security** on `ica_agentenabled` so only the Close Owner role can c
 | `ica_company`, `ica_closerunname` | Text |
 | `ica_statusbefore`, `ica_statusafter` | Text |
 | `ica_statusverified` | Yes/No |
-| `ica_skillname`, `ica_skillhash`, `ica_postingpolicy` | Text |
+| `ica_skillname`, `ica_skillversion`, `ica_postingpolicy` | Text |
 | `ica_triggersource` | Choice: Chat, HumanStart, CompletionAutostart, BatchWatcher, ReminderSweep |
 | `ica_errorstage`, `ica_errorcode` | Text |
 | `ica_recordedon` | Date and time |
