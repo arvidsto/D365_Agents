@@ -4,6 +4,8 @@ How to charge customers a monthly fee per agent (around SGD 800), what that fee 
 
 Use the **[pricing calculator](../tools/pricing-calculator/index.html)** (open the file in a browser) to price a specific customer. All figures here come from that calculator's sample settings.
 
+> **Your costs in this doc are placeholders, not your real figures:** 3 hours a month per agent (1.5 support, 0.5 monitoring, 1 skill maintenance) at SGD 90 an hour, SGD 15 a month for the licensing service, and a setup day rate of SGD 1,500. Replace them with your own in the calculator before relying on any margin figure.
+>
 > Figures are planning estimates in SGD, excluding GST (9%). Microsoft rates were checked against [Copilot Studio billing rates](https://learn.microsoft.com/microsoft-copilot-studio/requirements-messages-management) in October 2026. Confirm current rates and your own costs before quoting. This isn't legal or tax advice.
 
 ---
