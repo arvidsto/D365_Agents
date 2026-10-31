@@ -122,6 +122,22 @@ td:first-child { font-weight: 600; white-space: nowrap; }
 .kpi .to { font-family: var(--display); font-weight: 700; color: var(--accent); font-size: 1.1rem; }
 .sample ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
 
+/* user view */
+.screens { display: grid; gap: 28px; }
+.screens h3 { display: flex; align-items: center; gap: 10px; }
+.screens h3 span { font-family: var(--mono); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 720px) { .gallery { grid-template-columns: 1fr; } }
+.gallery figure { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; display: grid; align-content: start; min-width: 0; }
+.gallery a.shot { display: block; background: #f5f5f5; border-bottom: 1px solid var(--line); aspect-ratio: 16 / 13; }
+.gallery img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: top center; }
+.gallery figure.wide a.shot { aspect-ratio: auto; }
+.gallery figure.wide img { height: auto; }
+.gallery figcaption { padding: 12px 14px; display: grid; gap: 3px; }
+.gallery figcaption b { font-family: var(--display); font-weight: 600; }
+.gallery figcaption span { font-size: .88rem; color: var(--muted); }
+.gallery figure.wide { grid-column: 1 / -1; }
+
 /* use cases */
 .bricks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
 .bricks div { background: var(--surface); padding: 12px 14px; display: grid; gap: 2px; align-content: start; min-width: 0; }
@@ -341,6 +357,54 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         <li>Cost accountant approves before the close starts, in batch</li>
         <li>One email sender; recipients come only from Dataverse or D365</li>
       </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="eyebrow">User view</div>
+    <h2>What people see</h2>
+    <p>Nobody opens Copilot Studio. People meet the agent in Teams or Microsoft 365 Copilot chat, an approval card, an email and one review app, while Dynamics 365 stays the system of record. Design mock-ups with example data from the USMF demo company; select a screen to see it full size.</p>
+  </div>
+  <div class="screens">
+    <div>
+      <h3>Credit Hold Review Agent <span>credit manager · sales</span></h3>
+      <div class="gallery">
+        <figure>
+          <a class="shot" href="screens/ch-chat.png"><img src="screens/ch-chat.png" width="1920" height="1560" loading="lazy" alt="Chat with the Credit Hold Review Agent explaining why order 000815 is on hold, with a facts table and links"></a>
+          <figcaption><b>1 · Ask why, in chat</b><span>Answers from the decision log: the facts, the policy and who must approve.</span></figcaption>
+        </figure>
+        <figure>
+          <a class="shot" href="screens/ch-approval.png"><img src="screens/ch-approval.png" width="1920" height="1560" loading="lazy" alt="Teams approval card with the recommendation Release, credit facts, reasons, a comment box and Approve release or Keep on hold buttons"></a>
+          <figcaption><b>2 · Approve in one click</b><span>Recommendation, facts and reasons on one card. Nothing changes in D365 until a person decides.</span></figcaption>
+        </figure>
+        <figure class="wide">
+          <a class="shot" href="screens/ch-reviewapp.png"><img src="screens/ch-reviewapp.png" width="2560" height="1560" loading="lazy" alt="Credit Hold Review app listing open holds with status and the decision log for the selected hold"></a>
+          <figcaption><b>3 · Every hold in one review app</b><span>Status, recommendation and the full decision log for each hold.</span></figcaption>
+        </figure>
+      </div>
+    </div>
+    <div>
+      <h3>Inventory Close Agent <span>cost accountant · controllers · task owners</span></h3>
+      <div class="gallery">
+        <figure>
+          <a class="shot" href="screens/ic-chat.png"><img src="screens/ic-chat.png" width="1920" height="1800" loading="lazy" alt="Chat running the October 2026 inventory close for USMF, with task results and a note that the chain stopped at task 20"></a>
+          <figcaption><b>1 · Run the close from chat</b><span>Runs the allowed tasks in order and stops at the first one a person must handle.</span></figcaption>
+        </figure>
+        <figure>
+          <a class="shot" href="screens/ic-approval.png"><img src="screens/ic-approval.png" width="1920" height="1800" loading="lazy" alt="Approval card for running the inventory close, with readiness checks and Approve close or Reject buttons"></a>
+          <figcaption><b>2 · A person approves the close</b><span>Readiness checks first; the close then runs as a batch job the agent never reverses.</span></figcaption>
+        </figure>
+        <figure>
+          <a class="shot" href="screens/ic-email.png"><img src="screens/ic-email.png" width="1920" height="1800" loading="lazy" alt="Review handoff email to the inventory controller about two items with negative on-hand"></a>
+          <figcaption><b>3 · The owner is told what to do</b><span>One email to the task owner only, with the items and links to fix them.</span></figcaption>
+        </figure>
+        <figure>
+          <a class="shot" href="screens/ic-compliance.png"><img src="screens/ic-compliance.png" width="2560" height="1800" loading="lazy" alt="Compliance review app with one audit row per task decision"></a>
+          <figcaption><b>4 · An audit row for every decision</b><span>What ran, the outcome, the status change and which rule version was used.</span></figcaption>
+        </figure>
+      </div>
     </div>
   </div>
 </section>
