@@ -1,0 +1,320 @@
+<meta charset="utf-8">
+<title>D365 Agent Subscriptions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column; the three plans as a ruled comparison table that becomes stacked cards on phones; cost split shown as "you pay us / you pay Microsoft" ledger */
+:root {
+  --paper: #f5f6f4;
+  --surface: #ffffff;
+  --ink: #1b2430;
+  --muted: #5b6672;
+  --line: #d9ddd8;
+  --accent: #1f6f5c;
+  --accent-soft: #e2efea;
+  --ms: #a8610f;
+  --ms-soft: #f7ecdc;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #12171c; --surface: #1a2128; --ink: #e6ebe8; --muted: #9aa6ae; --line: #2c363e;
+  --accent: #5fbf9f; --accent-soft: #19322b; --ms: #e2a253; --ms-soft: #352816; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #12171c; --surface: #1a2128; --ink: #e6ebe8; --muted: #9aa6ae; --line: #2c363e;
+  --accent: #5fbf9f; --accent-soft: #19322b; --ms: #e2a253; --ms-soft: #352816; color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.55; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 40px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.2rem, 5vw, 3.2rem); line-height: 1.05; font-weight: 700; }
+h2 { font-size: 1.7rem; font-weight: 600; }
+h3 { font-size: 1.15rem; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-family: var(--mono); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.lede { font-size: 1.2rem; color: var(--muted); max-width: 62ch; }
+section { display: grid; gap: 20px; }
+.head { display: grid; gap: 6px; max-width: 70ch; }
+.head p { color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+
+header { display: grid; gap: 18px; border-bottom: 1px solid var(--line); padding-bottom: 36px; }
+.split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 760px; }
+.split div { padding: 14px 16px; border-radius: 4px; display: grid; gap: 4px; }
+.split .us { background: var(--accent-soft); }
+.split .ms { background: var(--ms-soft); }
+.split b { font-family: var(--display); font-size: 1.05rem; }
+.split .us b { color: var(--accent); }
+.split .ms b { color: var(--ms); }
+.split span { font-size: .95rem; }
+
+/* plans */
+.plans { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+.plans table { width: 100%; border-collapse: collapse; min-width: 640px; }
+.plans th, .plans td { padding: 12px 16px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.plans thead th { border-bottom: 2px solid var(--ink); }
+.plans thead th:first-child { width: 30%; }
+.plan-name { font-family: var(--display); font-size: 1.25rem; font-weight: 700; display: block; }
+.price { font-family: var(--display); font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; display: block; margin-top: 6px; }
+.per { font-size: .85rem; color: var(--muted); font-weight: 400; font-family: var(--body); }
+.fit { font-size: .88rem; color: var(--muted); font-weight: 400; display: block; margin-top: 6px; font-family: var(--body); }
+.plans tbody th { font-weight: 600; font-size: .95rem; }
+.plans tbody td { font-variant-numeric: tabular-nums; }
+.plans tr:last-child th, .plans tr:last-child td { border-bottom: 0; }
+.yes { color: var(--accent); font-weight: 600; }
+
+/* setup steps */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; counter-reset: s; }
+.steps li { counter-increment: s; border-top: 3px solid var(--accent); padding-top: 10px; display: grid; gap: 4px; align-content: start; }
+.steps li::before { content: "Step " counter(s); font-family: var(--mono); font-size: .72rem; color: var(--accent); letter-spacing: .06em; text-transform: uppercase; }
+.steps b { font-family: var(--display); font-weight: 600; }
+.steps span { color: var(--muted); font-size: .93rem; }
+.note { background: var(--accent-soft); padding: 14px 16px; border-radius: 4px; max-width: 80ch; }
+
+/* examples */
+.examples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.ex { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 20px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.ex p { color: var(--muted); font-size: .95rem; }
+.ledger { width: 100%; border-collapse: collapse; font-size: .95rem; }
+.ledger td { padding: 7px 0; border-bottom: 1px solid var(--line); }
+.ledger td:last-child { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 12px; }
+.ledger tr.total td { font-weight: 600; border-bottom: 2px solid var(--ink); }
+.ledger tr.value td { color: var(--accent); font-weight: 600; border-bottom: 0; }
+.tag { font-family: var(--mono); font-size: .7rem; padding: 1px 6px; border-radius: 3px; margin-left: 6px; vertical-align: 1px; }
+.tag.us { background: var(--accent-soft); color: var(--accent); }
+.tag.ms { background: var(--ms-soft); color: var(--ms); }
+
+/* lists */
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.two > div { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.two ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+
+.rate { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+.rate table { width: 100%; border-collapse: collapse; min-width: 480px; font-size: .95rem; }
+.rate th, .rate td { padding: 9px 14px; border-bottom: 1px solid var(--line); text-align: left; }
+.rate th { font-family: var(--mono); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.rate td:nth-child(2) { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rate tr:last-child td { border-bottom: 0; }
+
+.faq { display: grid; gap: 0; border-top: 1px solid var(--line); }
+.faq details { border-bottom: 1px solid var(--line); padding: 12px 0; }
+.faq summary { cursor: pointer; font-weight: 600; font-size: 1.02rem; }
+.faq summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.faq details p { margin-top: 8px; color: var(--muted); max-width: 75ch; }
+
+footer { border-top: 1px solid var(--line); padding-top: 20px; color: var(--muted); font-size: .88rem; display: grid; gap: 6px; max-width: 90ch; }
+a { color: var(--accent); }
+
+@media (max-width: 720px) {
+  .split, .examples, .two { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">AI agents for Dynamics 365 · Finance · Supply Chain · Dataverse</div>
+  <h1>D365 Agent Subscriptions</h1>
+  <p class="lede">AI agents that work inside your Dynamics 365, built on Microsoft Copilot Studio. Each agent takes on one business process, asks your people before anything important happens, and records every decision. You subscribe per agent, per month.</p>
+  <div class="split">
+    <div class="us"><b>You pay us</b><span>A monthly subscription per agent, plus a one-off setup. Covers the agent, updates, monitoring, reports and support.</span></div>
+    <div class="ms"><b>You pay Microsoft</b><span>Copilot Studio usage (Copilot credits) and your existing D365 licences, directly on your own Microsoft agreement. We never mark them up.</span></div>
+  </div>
+</header>
+
+<section>
+  <div class="head">
+    <div class="eyebrow">Plans</div>
+    <h2>One price per agent per month</h2>
+    <p>Choose the plan by how much work the agent does and how many of your companies it covers. Prices in Singapore dollars, excluding GST.</p>
+  </div>
+  <div class="plans">
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th><span class="plan-name">Standard</span><span class="price">S$800<span class="per"> / month</span></span><span class="fit">One company, steady volume</span></th>
+          <th><span class="plan-name">Plus</span><span class="price">S$1,400<span class="per"> / month</span></span><span class="fit">Several companies or high volume</span></th>
+          <th><span class="plan-name">Enterprise</span><span class="price">S$2,400<span class="per"> / month</span></span><span class="fit">Group-wide use</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><th>Work items included each month</th><td>500</td><td>2,000</td><td>10,000</td></tr>
+        <tr><th>Extra work items</th><td>S$1.00 each</td><td>S$0.60 each</td><td>S$0.30 each</td></tr>
+        <tr><th>Companies (legal entities) included</th><td>1</td><td>3</td><td>Unlimited</td></tr>
+        <tr><th>Each extra company</th><td>S$250 / month</td><td>S$250 / month</td><td>–</td></tr>
+        <tr><th>Policy and rule changes on request</th><td>2 per quarter</td><td>Monthly</td><td>As needed</td></tr>
+        <tr><th>Monthly results report</th><td class="yes">Included</td><td class="yes">Included</td><td class="yes">Included, plus quarterly review</td></tr>
+        <tr><th>Re-tested after Microsoft and D365 updates</th><td class="yes">Included</td><td class="yes">Included</td><td class="yes">Included</td></tr>
+        <tr><th>Support response</th><td>2 business days</td><td>1 business day</td><td>4 business hours</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note"><strong>What is a work item?</strong> The thing the agent works on: one sales order on credit hold reviewed, one close task run, one document processed. It's counted from the agent's own audit log in your environment, so you can check the number yourself.</p>
+</section>
+
+<section>
+  <div class="head">
+    <div class="eyebrow">Getting started</div>
+    <h2>One-off setup from S$9,000</h2>
+    <p>About six working days of our time, spread over four to six weeks so your team can test with real cases before anything goes live.</p>
+  </div>
+  <ol class="steps">
+    <li><b>Assess</b><span>Walk through the process with your team, confirm data access and agree the rules the agent follows.</span></li>
+    <li><b>Configure</b><span>Install the agent in your Microsoft environment and set it up for your companies and thresholds.</span></li>
+    <li><b>Test</b><span>Run your own past cases through it and agree the results with the process owner.</span></li>
+    <li><b>Shadow</b><span>Two to four weeks where the agent recommends and your people decide as usual, so you can compare.</span></li>
+    <li><b>Go live</b><span>Switch on, train the people who approve, and hand over the monthly report.</span></li>
+  </ol>
+  <p class="note"><strong>Pilot option:</strong> start with three months at half the subscription price. Setup is charged in full. After the pilot you continue on the agreed plan or stop.</p>
+</section>
+
+<section>
+  <div class="head">
+    <div class="eyebrow">Examples</div>
+    <h2>What a typical month costs, all in</h2>
+    <p>Indicative figures for two agents, including the Microsoft usage you pay directly. Microsoft usage is shown as a range until we measure it on your data in a validation run, before you commit.</p>
+  </div>
+  <div class="examples">
+    <div class="ex">
+      <h3>Credit Hold Review Agent</h3>
+      <p>Reviews sales orders on credit hold in D365 Finance, gathers credit and customer information, recommends release or keep with reasons, and asks your credit manager to approve. Example: 300 holds a month, one company.</p>
+      <table class="ledger">
+        <tr><td>Standard plan <span class="tag us">to us</span></td><td>S$800</td></tr>
+        <tr><td>Copilot credits, 14,000–39,000 <span class="tag ms">to Microsoft</span></td><td>S$190–440</td></tr>
+        <tr class="total"><td>Total per month</td><td>S$990–1,240</td></tr>
+        <tr class="value"><td>Credit team time saved (50 hours)</td><td>about S$2,750</td></tr>
+      </table>
+    </div>
+    <div class="ex">
+      <h3>Inventory Close Agent</h3>
+      <p>Runs the month-end inventory close checklist in D365 Supply Chain Management: readiness checks, the close itself after your cost accountant approves, and the reconciliation to the ledger. Example: two companies, 16 close tasks a month.</p>
+      <table class="ledger">
+        <tr><td>Standard plan + 1 extra company <span class="tag us">to us</span></td><td>S$1,050</td></tr>
+        <tr><td>Copilot credits, 6,000–31,000 <span class="tag ms">to Microsoft</span></td><td>S$70–340</td></tr>
+        <tr class="total"><td>Total per month</td><td>S$1,120–1,390</td></tr>
+        <tr class="value"><td>Finance team time saved (32 hours)</td><td>about S$2,240</td></tr>
+      </table>
+    </div>
+  </div>
+  <p class="muted" style="font-size:.9rem;color:var(--muted)">Ranges run from a lean case to a heavy one (twice the steps, and for AI models billed by text processed, twice the text per step). Most agents land near the lower half; the validation run tells us where yours does. Our agents are built to keep Microsoft usage low: routine checks run as simple automations, and the AI only steps in when there is something to judge. Time saved is valued at S$55 (credit team) and S$70 (finance team) per hour. Your figures will differ; we use yours in the proposal.</p>
+</section>
+
+<section>
+  <div class="head">
+    <div class="eyebrow">Your Microsoft costs</div>
+    <h2>How Copilot usage is charged</h2>
+    <p>Microsoft charges Copilot Studio usage in Copilot credits, either pay-as-you-go through your Azure subscription (about US$0.01 per credit) or as prepaid packs of 25,000 credits a month. Your administrator can set a monthly limit for each agent.</p>
+  </div>
+  <div class="rate">
+    <table>
+      <thead><tr><th>What the agent does</th><th>Credits</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td>Takes a step: starts, calls a tool, reads Dynamics 365</td><td>5 each</td><td>Reading a customer's credit limit</td></tr>
+        <tr><td>Writes an answer</td><td>2 each</td><td>Replying to a question in Teams</td></tr>
+        <tr><td>Runs a fixed workflow</td><td>13 per 100 actions</td><td>Saving a decision and sending an email</td></tr>
+        <tr><td>Uses an AI prompt</td><td>0.1 to 10 per 1,000 tokens (about 750 words)</td><td>Drafting a recommendation</td></tr>
+        <tr><td>Thinks with a reasoning model or the newer Copilot agent engine</td><td>10 per 1,000 tokens read and written</td><td>Re-reading its instructions and results at each step</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note"><strong>How we pin it down.</strong> Before you commit, we run the agent on 40–50 of your own cases for a few days in a separate test environment, read the exact credits from Microsoft's consumption report, and replace the range with the measured figure. Your administrator can also set a monthly credit limit for each agent, so it can never exceed the budget you agree.</p>
+  <p class="note"><strong>We design to keep this low.</strong> For example, starting the Credit Hold agent when Dynamics 365 raises an event, instead of checking every 30 minutes, cuts its Microsoft cost by about a quarter. Rates from Microsoft's published Copilot Studio billing rates, October 2026; Microsoft may change them.</p>
+</section>
+
+<section>
+  <div class="two">
+    <div>
+      <div class="eyebrow">Included</div>
+      <h2>In every subscription</h2>
+      <ul>
+        <li>The agent and its business rules, kept up to date</li>
+        <li>Fixes and new versions, delivered without reinstalling</li>
+        <li>Monitoring, and a monthly report: volume, share handled automatically, time saved, decisions made</li>
+        <li>Re-testing after Microsoft and Dynamics 365 updates</li>
+        <li>Rule changes on request, as your plan allows</li>
+        <li>Support by email and Teams</li>
+      </ul>
+    </div>
+    <div>
+      <div class="eyebrow">Not included</div>
+      <h2>Paid separately</h2>
+      <ul>
+        <li>Microsoft Copilot credits and your Dynamics 365 and Microsoft 365 licences</li>
+        <li>Changes to your Dynamics 365 setup</li>
+        <li>New agents, or new processes outside the agent's scope (quoted separately)</li>
+        <li>GST (9%)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="head">
+    <div class="eyebrow">Your data and control</div>
+    <h2>Your data stays in your Microsoft environment</h2>
+  </div>
+  <div class="two">
+    <div>
+      <h3>Where the work happens</h3>
+      <ul>
+        <li>The agent runs in your own Microsoft tenant, with your Dynamics 365 security roles.</li>
+        <li>It reads and writes your data only there. Our licence service never receives your business data or personal data.</li>
+        <li>The only things sent to us are a licence key, your tenant ID, the agent's name and the rule set it needs.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Who stays in charge</h3>
+      <ul>
+        <li>Your people approve financial and other important actions before the agent acts.</li>
+        <li>Every decision is logged with its reasons, in a review app you own.</li>
+        <li>You can pause one task, one schedule, or the whole agent at any time.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="head">
+    <div class="eyebrow">Terms</div>
+    <h2>Simple terms</h2>
+  </div>
+  <div class="rate">
+    <table>
+      <tbody>
+        <tr><td>Minimum term</td><td>12 months, then renews yearly</td></tr>
+        <tr><td>Paying annually in advance</td><td>10% off the subscription</td></tr>
+        <tr><td>Extra work items</td><td>Invoiced monthly, after the month</td></tr>
+        <tr><td>Price changes</td><td>Only at renewal, with 60 days' notice, at most 5% a year</td></tr>
+        <tr><td>Notice to stop</td><td>60 days before renewal</td></tr>
+        <tr><td>Prices</td><td>Singapore dollars, excluding GST</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="head">
+    <div class="eyebrow">Questions</div>
+    <h2>Frequently asked</h2>
+  </div>
+  <div class="faq">
+    <details><summary>Why are Microsoft costs separate?</summary><p>They're for Microsoft's service, billed on your own Microsoft agreement. Keeping them separate means you see exactly what Microsoft charges, you control the limit, and we don't add a margin on top.</p></details>
+    <details><summary>What happens if we go over the work items in our plan?</summary><p>The agent keeps working. Extra items are charged at your plan's rate. If you're regularly over, we'll suggest the plan that's cheaper for you.</p></details>
+    <details><summary>What happens when the subscription ends?</summary><p>You get reminders in the agent's reports from 30 days before, and a 7-day grace period. After that the agent stops starting new work and hands open items to your people. Work already under way finishes, and your audit log and data stay in your environment.</p></details>
+    <details><summary>What if your service is unavailable?</summary><p>The agent keeps working for several hours on the rules it already has, and its reports say so. Only a longer outage pauses new work, which then goes to your people.</p></details>
+    <details><summary>Do our users need Microsoft 365 Copilot licences?</summary><p>No. Users who already have them can chat with the agent at no Copilot credit cost. Work the agent does on its own is charged as Copilot credits either way.</p></details>
+    <details><summary>Can we change the rules the agent follows?</summary><p>Yes. Thresholds such as amounts and days are settings in your environment that your administrator can change. Changes to the rules themselves are part of your plan's included changes.</p></details>
+  </div>
+</section>
+
+<footer>
+  <p>Indicative pricing, October 2026. Your quote is based on your volumes, companies and the Microsoft usage measured in testing. Microsoft Copilot credit rates are Microsoft's published rates and may change.</p>
+  <p>Microsoft, Dynamics 365, Copilot Studio and Dataverse are trademarks of the Microsoft group of companies. These agents are built on Microsoft products; they are not Microsoft products.</p>
+</footer>
+
+</div>

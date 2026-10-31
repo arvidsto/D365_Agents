@@ -1,0 +1,15 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "LICENCE_STORE": "local",
+    "LOCAL_LICENCE_FILE": "./dev/licences.json",
+    "LICENCE_TABLE_CONNECTION": "",
+    "LICENCE_TABLE_NAME": "Licences",
+    "WARNING_DAYS": "30",
+    "DEFAULT_GRACE_DAYS": "7",
+    "DEFAULT_OFFLINE_HOURS": "4",
+    "MAX_OFFLINE_HOURS": "24"
+  }
+}

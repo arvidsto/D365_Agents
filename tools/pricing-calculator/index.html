@@ -1,0 +1,570 @@
+<meta charset="utf-8">
+<title>Agent Pricing Calculator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: two-column workbench — inputs on the left as ledger-style fieldsets, live results pinned on the right; one column on phones */
+:root {
+  --paper: #f5f6f4;
+  --surface: #ffffff;
+  --ink: #1b2430;
+  --muted: #5b6672;
+  --line: #d9ddd8;
+  --accent: #1f6f5c;
+  --accent-soft: #e2efea;
+  --fee: #2a78d6;
+  --ms: #eb6834;
+  --value: #1baf7a;
+  --warn: #a8610f;
+  --warn-soft: #f7ecdc;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #12171c; --surface: #1b2026; --ink: #e6ebe8; --muted: #9aa6ae; --line: #2c363e;
+  --accent: #5fbf9f; --accent-soft: #19322b; --fee: #3987e5; --ms: #d95926; --value: #199e70;
+  --warn: #e2a253; --warn-soft: #352816; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #12171c; --surface: #1b2026; --ink: #e6ebe8; --muted: #9aa6ae; --line: #2c363e;
+  --accent: #5fbf9f; --accent-soft: #19322b; --fee: #3987e5; --ms: #d95926; --value: #199e70;
+  --warn: #e2a253; --warn-soft: #352816; color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 24px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: clamp(1.8rem, 4vw, 2.4rem); font-weight: 700; line-height: 1.1; }
+h2 { font-size: 1.15rem; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-family: var(--mono); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.muted { color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+
+header { display: grid; gap: 10px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.toolbar .tool { display: inline-flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--surface); }
+.seg button { font: 600 .9rem var(--body); color: var(--ink); background: transparent; border: 0; padding: 7px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.seg-label { font-family: var(--mono); font-size: .72rem; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+.btn { font: 600 .9rem var(--body); color: var(--accent); background: var(--surface); border: 1px solid var(--accent); border-radius: 4px; padding: 7px 12px; cursor: pointer; }
+.btn:hover { background: var(--accent-soft); }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.bench { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 24px; align-items: start; }
+.inputs { display: grid; gap: 14px; min-width: 0; }
+fieldset { min-inline-size: 0; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); padding: 14px 16px 16px; margin: 0; display: grid; gap: 12px; min-width: 0; }
+legend { font-family: var(--display); font-weight: 600; font-size: 1rem; padding: 0 6px; }
+.hint { font-size: .85rem; color: var(--muted); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 14px; }
+label.f { display: grid; gap: 3px; font-size: .86rem; color: var(--muted); min-width: 0; }
+label.f span.u { font-family: var(--mono); font-size: .72rem; }
+select { font-family: var(--body) !important; font-size: .9rem !important; }
+input[type="number"], select {
+  font: 500 .95rem var(--mono); color: var(--ink); background: var(--paper); border: 1px solid var(--line);
+  border-radius: 3px; padding: 6px 8px; width: 100%; min-width: 0; font-variant-numeric: tabular-nums; }
+label.check { display: flex; gap: 8px; align-items: flex-start; font-size: .9rem; }
+label.check input { margin-top: 3px; accent-color: var(--accent); }
+.tiers { overflow-x: auto; max-width: 100%; }
+.tiers table { border-collapse: collapse; width: 100%; min-width: 440px; font-size: .86rem; }
+.tiers th { text-align: left; font-family: var(--mono); font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 500; padding: 4px 6px; }
+.tiers td { padding: 3px 6px; }
+.tiers td:first-child { font-weight: 600; white-space: nowrap; }
+
+/* results */
+.results { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); display: grid; gap: 16px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 18px; display: grid; gap: 16px; min-width: 0; }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+.tile { background: var(--surface); padding: 12px 14px; display: grid; gap: 2px; align-content: start; min-width: 0; }
+.tile .k { font-size: .8rem; color: var(--muted); }
+.tile .v { font-family: var(--display); font-weight: 700; font-size: 1.6rem; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.tile .s { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tile.vendor { background: var(--accent-soft); }
+.tile.vendor .k, .tile.vendor .s { color: var(--ink); }
+
+.chart { display: grid; gap: 8px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .82rem; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.barrow { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 10px; align-items: center; }
+.barrow .lab { font-size: .82rem; color: var(--muted); }
+.track { position: relative; height: 26px; display: flex; gap: 2px; }
+.seg-bar { height: 100%; min-width: 2px; position: relative; cursor: default; }
+.seg-bar:first-child { border-radius: 4px 0 0 4px; }
+.seg-bar:last-child { border-radius: 0 4px 4px 0; }
+.seg-bar:only-child { border-radius: 4px; }
+.seg-bar.range, .legend i.hatch { background: repeating-linear-gradient(45deg, var(--ms) 0 2px, transparent 2px 6px); box-shadow: inset 0 0 0 1px var(--ms); }
+.legend i.hatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.cmp tr.exp td { font-weight: 600; }
+.barval { font-size: .82rem; color: var(--ink); font-variant-numeric: tabular-nums; padding-left: 102px; }
+.tip { position: fixed; z-index: 20; pointer-events: none; background: var(--ink); color: var(--paper); font-size: .8rem; padding: 6px 8px; border-radius: 3px; max-width: 240px; }
+
+.breakdown { width: 100%; border-collapse: collapse; font-size: .88rem; table-layout: fixed; }
+.breakdown td { overflow-wrap: anywhere; }
+.breakdown tr:not(.group) td:last-child { width: 9.5em; }
+.breakdown td { padding: 5px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.breakdown td:last-child { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 12px; }
+.breakdown tr.group td { white-space: normal; text-align: left; font-family: var(--mono); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding-top: 12px; border-bottom: 1px solid var(--ink); }
+.breakdown tr.total td { font-weight: 600; }
+.cmp { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.cmp th, .cmp td { padding: 5px 6px; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
+.cmp th:first-child, .cmp td:first-child { text-align: left; }
+.cmp th { font-family: var(--mono); font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.cmp tr.chosen td { font-weight: 600; background: var(--accent-soft); }
+.chip { font-family: var(--mono); font-size: .68rem; border: 1px solid var(--accent); color: var(--accent); border-radius: 3px; padding: 0 4px; margin-left: 6px; }
+
+.warnings { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.warnings li { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 8px 10px; font-size: .88rem; display: grid; grid-template-columns: auto 1fr; gap: 8px; }
+.warnings li b { color: var(--warn); font-family: var(--mono); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; padding-top: 2px; }
+.ok { font-size: .88rem; color: var(--muted); }
+.copyrow { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+#copied { font-size: .85rem; color: var(--accent); }
+#quoteText { width: 100%; min-height: 0; font: .82rem var(--mono); color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 3px; padding: 8px; }
+footer { font-size: .82rem; color: var(--muted); display: grid; gap: 4px; max-width: 90ch; }
+footer a { color: var(--accent); }
+[data-view="customer"] .vendor-only { display: none !important; }
+
+@media (max-width: 900px) {
+  .bench { grid-template-columns: minmax(0, 1fr); }
+  .results { position: static; order: -1; }
+}
+@media (prefers-reduced-motion: no-preference) { .seg-bar { transition: flex-basis .2s ease; } }
+</style>
+
+<div class="wrap" id="app" data-view="vendor">
+  <header>
+    <div class="eyebrow">D365 agents · subscription pricing · SGD, excl. GST</div>
+    <h1>Agent Pricing Calculator</h1>
+    <p class="muted">Price one agent for one customer: what you charge, what the customer pays Microsoft in Copilot credits, the value it creates, and your margin. Start from a sample agent and change any number.</p>
+    <div class="toolbar">
+      <span class="tool"><span class="seg-label">Start from</span>
+      <div class="seg" role="group" aria-label="Sample agent">
+        <button type="button" id="presetCredit" data-preset="credit-hold" aria-pressed="true">Credit Hold Review</button>
+        <button type="button" id="presetInventory" data-preset="inventory-close" aria-pressed="false">Inventory Close</button>
+      </div></span>
+      <span class="tool"><span class="seg-label">Design</span>
+      <div class="seg" role="group" aria-label="Agent design">
+        <button type="button" data-design="lean" aria-pressed="true" title="Flows do the fetching, the agent does the judgement (current design)">Lean</button>
+        <button type="button" data-design="flexible" aria-pressed="false" title="The agent polls and looks up each fact itself (previous design)">Flexible</button>
+      </div></span>
+      <span class="tool"><span class="seg-label">View</span>
+      <div class="seg" role="group" aria-label="View">
+        <button type="button" id="viewVendor" data-view="vendor" aria-pressed="true">Internal (with margin)</button>
+        <button type="button" id="viewCustomer" data-view="customer" aria-pressed="false">Customer</button>
+      </div></span>
+    </div>
+  </header>
+
+  <div class="bench">
+    <form class="inputs" id="form" autocomplete="off">
+      <fieldset>
+        <legend>Workload &amp; value</legend>
+        <div class="grid2">
+          <label class="f"><span id="itemsLabel">Work items per month</span><input type="number" id="itemsPerMonth" data-path="itemsPerMonth" min="0" step="1"></label>
+          <label class="f">Legal entities (companies)<input type="number" id="legalEntities" data-path="legalEntities" min="1" step="1"></label>
+          <label class="f">Minutes saved per item<input type="number" id="minutesSaved" data-path="value.minutesSavedPerItem" min="0" step="1"></label>
+          <label class="f">Staff cost per hour <span class="u">SGD, loaded</span><input type="number" id="staffCost" data-path="value.staffCostPerHourSgd" min="0" step="1"></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Copilot credits per item</legend>
+        <p class="hint">Count from a test run's activity map. Agent action = trigger, tool, MCP call or flow call (5 credits). Agent flow actions: 13 credits per 100.</p>
+        <div class="grid2">
+          <label class="f">Agent actions<input type="number" id="aa" data-path="perItem.agentActions" min="0" step="1"></label>
+          <label class="f">Generative answers<input type="number" id="ga" data-path="perItem.generativeAnswers" min="0" step="1"></label>
+          <label class="f">Agent flow actions<input type="number" id="fa" data-path="perItem.flowActions" min="0" step="1"></label>
+          <label class="f">Prompt tokens <span class="u">thousands</span><input type="number" id="pt" data-path="perItem.promptKTokens" min="0" step="0.5"></label>
+          <label class="f">Prompt model tier
+            <select id="ptier" data-path="perItem.promptTier">
+              <option value="basic">Basic (0.1 / 1K)</option>
+              <option value="standard">Standard (1.5 / 1K)</option>
+              <option value="premium">Premium (10 / 1K)</option>
+            </select></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Background runs &amp; chat</legend>
+        <div class="grid2">
+          <label class="f">Scheduled runs per month<input type="number" id="runs" data-path="scheduled.runsPerMonth" min="0" step="1"></label>
+          <label class="f">Agent actions per run<input type="number" id="runAa" data-path="scheduled.agentActionsPerRun" min="0" step="1"></label>
+          <label class="f">Flow actions per run<input type="number" id="runFa" data-path="scheduled.flowActionsPerRun" min="0" step="1"></label>
+          <label class="f">Chat sessions per month<input type="number" id="chats" data-path="chat.sessionsPerMonth" min="0" step="1"></label>
+          <label class="f">Agent actions per chat<input type="number" id="chatAa" data-path="chat.agentActionsPerSession" min="0" step="1"></label>
+          <label class="f">Generative answers per chat<input type="number" id="chatGa" data-path="chat.generativeAnswersPerSession" min="0" step="1"></label>
+        </div>
+        <label class="check"><input type="checkbox" id="m365" data-path="chat.usersHaveM365Copilot"> Chat users have Microsoft 365 Copilot licences (their chat isn't charged; scheduled and event runs still are)</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>AI model &amp; measured usage</legend>
+        <p class="hint">Reasoning models and the Microsoft Copilot harness are also billed for the text the model reads and writes (10 credits per 1,000 tokens), which is the hardest part to estimate. Once you have run a validation, enter the measured credits: they replace the estimate and narrow the range.</p>
+        <div class="grid2">
+          <label class="f">Orchestration model
+            <select id="modelType" data-path="model.type">
+              <option value="standard">Standard model</option>
+              <option value="reasoning">Reasoning model</option>
+              <option value="harness">Microsoft Copilot harness</option>
+            </select></label>
+          <label class="f">Tokens per agent action <span class="u">thousands, token-billed models</span><input type="number" id="kTok" data-path="model.kTokensPerAction" min="0" step="0.5"></label>
+          <label class="f">Measured credits per item <span class="u">0 = not measured</span><input type="number" id="mItem" data-path="measured.creditsPerItem" min="0" step="1"></label>
+          <label class="f">Measured credits per scheduled run<input type="number" id="mRun" data-path="measured.creditsPerScheduledRun" min="0" step="0.5"></label>
+          <label class="f">Measured credits per chat<input type="number" id="mChat" data-path="measured.creditsPerChatSession" min="0" step="0.5"></label>
+        </div>
+        <div class="grid2">
+          <label class="f">Low case × <span class="u">steps and tokens</span><input type="number" id="rLow" data-path="range.lowFactor" min="0" step="0.05"></label>
+          <label class="f">High case: steps ×<input type="number" id="rHighS" data-path="range.highStepFactor" min="1" step="0.25"></label>
+          <label class="f">High case: tokens per step ×<input type="number" id="rHighT" data-path="range.highTokenFactor" min="1" step="0.25"></label>
+          <label class="f">Measured: range ± <span class="u">fraction</span><input type="number" id="rBand" data-path="range.measuredBand" min="0" max="1" step="0.05"></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Microsoft prices</legend>
+        <div class="grid2">
+          <label class="f">Pay-as-you-go per credit <span class="u">USD</span><input type="number" id="cp" data-path="creditPriceUsd" min="0" step="0.001"></label>
+          <label class="f">Credits per pack<input type="number" id="pc" data-path="packCredits" min="1" step="1000"></label>
+          <label class="f">Pack price per month <span class="u">USD</span><input type="number" id="pp" data-path="packPriceUsd" min="0" step="1"></label>
+          <label class="f">USD → SGD<input type="number" id="fx" data-path="fxUsdToSgd" min="0" step="0.01"></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Your price</legend>
+        <div class="tiers">
+          <table>
+            <thead><tr><th>Tier</th><th>SGD / month</th><th>Items incl.</th><th>Entities incl.</th><th>Overage / item</th></tr></thead>
+            <tbody>
+              <tr><td>Standard</td><td><input type="number" id="t0p" data-path="tiers.0.priceSgd" min="0"></td><td><input type="number" id="t0i" data-path="tiers.0.includedItems" min="0"></td><td><input type="number" id="t0e" data-path="tiers.0.includedEntities" min="1"></td><td><input type="number" id="t0o" data-path="tiers.0.overagePerItemSgd" min="0" step="0.1"></td></tr>
+              <tr><td>Plus</td><td><input type="number" id="t1p" data-path="tiers.1.priceSgd" min="0"></td><td><input type="number" id="t1i" data-path="tiers.1.includedItems" min="0"></td><td><input type="number" id="t1e" data-path="tiers.1.includedEntities" min="1"></td><td><input type="number" id="t1o" data-path="tiers.1.overagePerItemSgd" min="0" step="0.1"></td></tr>
+              <tr><td>Enterprise</td><td><input type="number" id="t2p" data-path="tiers.2.priceSgd" min="0"></td><td><input type="number" id="t2i" data-path="tiers.2.includedItems" min="0"></td><td class="muted" style="font-size:.82rem">unlimited</td><td><input type="number" id="t2o" data-path="tiers.2.overagePerItemSgd" min="0" step="0.1"></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="grid2">
+          <label class="f">Tier
+            <select id="tierChoice" data-path="tierChoice">
+              <option value="auto">Cheapest for the customer</option>
+              <option value="Standard">Standard</option>
+              <option value="Plus">Plus</option>
+              <option value="Enterprise">Enterprise</option>
+            </select></label>
+          <label class="f">Extra legal entity <span class="u">SGD / month</span><input type="number" id="ee" data-path="extraEntitySgd" min="0"></label>
+          <label class="f">Billing
+            <select id="billing" data-path="billing">
+              <option value="monthly">Monthly</option>
+              <option value="annual">Annual prepaid</option>
+            </select></label>
+          <label class="f">Annual prepay discount <span class="u">%</span><input type="number" id="disc" data-path="annualPrepayDiscountPct" min="0" max="50"></label>
+          <label class="f">Setup days<input type="number" id="sd" data-path="setup.days" min="0" step="0.5"></label>
+          <label class="f">Day rate <span class="u">SGD</span><input type="number" id="dr" data-path="setup.dayRateSgd" min="0"></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="vendor-only">
+        <legend>Your cost per agent per month</legend>
+        <p class="hint"><strong>Placeholders, not your figures.</strong> Replace them with your own: the hours you actually spend per agent each month, your loaded cost per hour (salary + overheads, or a contractor's rate), and your licensing service hosting.</p>
+        <p class="hint"><strong>Licensing service hosting</strong> is your share of running the licensing service: the small Azure service you host that checks each customer's licence and sends the agent its skills. Take your monthly Azure bill for it and divide by the number of live agents you sell (S$30 a month across 10 agents = S$3 each). The S$15 default is a generous placeholder. Customers never see this cost.</p>
+        <div class="grid2">
+          <label class="f">Support hours<input type="number" id="vh1" data-path="vendor.supportHours" min="0" step="0.5"></label>
+          <label class="f">Monitoring &amp; report hours<input type="number" id="vh2" data-path="vendor.monitoringHours" min="0" step="0.5"></label>
+          <label class="f">Skill maintenance hours<input type="number" id="vh3" data-path="vendor.maintenanceHours" min="0" step="0.5"></label>
+          <label class="f">Internal cost per hour <span class="u">SGD</span><input type="number" id="vhr" data-path="vendor.hourlyCostSgd" min="0"></label>
+          <label class="f">Licensing service hosting <span class="u">SGD per agent, your Azure bill ÷ agents</span><input type="number" id="az" data-path="vendor.azureShareSgd" min="0"></label>
+          <label class="f">Marketplace / channel fee <span class="u">%</span><input type="number" id="ch" data-path="vendor.channelFeePct" min="0" max="50" step="0.5"></label>
+          <label class="f">Customers on this agent<input type="number" id="cust" data-path="customersOnAgent" min="0" step="1"></label>
+        </div>
+      </fieldset>
+    </form>
+
+    <section class="results" aria-live="polite">
+      <div class="panel">
+        <div class="tiles">
+          <div class="tile"><span class="k">Customer pays per month</span><span class="v" id="rCustomer">–</span><span class="s" id="rCustomerSub">–</span></div>
+          <div class="tile"><span class="k">Time saved, valued per month</span><span class="v" id="rValue">–</span><span class="s" id="rValueSub">–</span></div>
+          <div class="tile"><span class="k">Return on monthly cost</span><span class="v" id="rRoi">–</span><span class="s" id="rRoiSub">–</span></div>
+          <div class="tile"><span class="k">Setup fee paid back in</span><span class="v" id="rPayback">–</span><span class="s" id="rPaybackSub">–</span></div>
+          <div class="tile vendor vendor-only"><span class="k">Your margin per month</span><span class="v" id="rMargin">–</span><span class="s" id="rMarginSub">–</span></div>
+          <div class="tile vendor vendor-only"><span class="k">Recurring revenue, all customers</span><span class="v" id="rArr">–</span><span class="s" id="rArrSub">–</span></div>
+        </div>
+
+        <div class="chart" id="chart">
+          <div class="legend">
+            <span><i style="background:var(--fee)"></i>Your subscription</span>
+            <span><i style="background:var(--ms)"></i>Microsoft Copilot credits</span>
+            <span><i class="hatch"></i>Up to the high case</span>
+            <span><i style="background:var(--value)"></i>Value of time saved</span>
+          </div>
+          <div class="barrow"><span class="lab">Monthly cost</span><div class="track" id="costTrack"></div></div>
+          <div class="barval" id="costVal"></div>
+          <div class="barrow"><span class="lab">Monthly value</span><div class="track" id="valueTrack"></div></div>
+          <div class="barval" id="valueVal"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;justify-content:space-between">
+          <h2>Microsoft usage range</h2><span class="chip" id="srcChip">estimated</span>
+        </div>
+        <div style="overflow-x:auto"><table class="cmp" id="rangeTbl"></table></div>
+        <p class="hint" id="rangeHint"></p>
+      </div>
+
+      <div class="panel">
+        <h2>Breakdown</h2>
+        <table class="breakdown" id="breakdown"></table>
+      </div>
+
+      <div class="panel">
+        <h2>Tiers at this volume</h2>
+        <div style="overflow-x:auto"><table class="cmp" id="tierCmp"></table></div>
+      </div>
+
+      <div class="panel">
+        <h2>Checks</h2>
+        <ul class="warnings" id="warnings"></ul>
+        <div class="copyrow">
+          <button type="button" class="btn" id="copyQuote">Copy quote summary</button>
+          <span id="copied" role="status"></span>
+        </div>
+        <textarea id="quoteText" rows="9" readonly hidden aria-label="Quote summary"></textarea>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <p>Copilot credit rates from Microsoft's <a href="https://learn.microsoft.com/microsoft-copilot-studio/requirements-messages-management">Copilot Studio billing rates</a> (checked October 2026): agent action 5, generative answer 2, agent flow actions 13 per 100, prompts 0.1 / 1.5 / 10 credits per 1K tokens, pay-as-you-go USD 0.01 per credit. Agents on the Microsoft Copilot harness are billed for model tokens, tools and the harness; this calculator approximates that from tokens per step. Measure with the <a href="https://github.com/arvidsto/D365_Agents/blob/main/docs/07-validating-copilot-consumption.md">consumption validation kit</a> before quoting.</p>
+    <p>Sample agent numbers are estimates for planning, not measurements. Measure credits per item in a test run before you quote. Prices exclude GST (9%). D365 and Microsoft 365 licences are paid by the customer and not included. Exchange rate is an input, not live.</p>
+    <p>Your inputs are kept in this browser only.</p>
+  </footer>
+</div>
+
+<script src="calc.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = window.PricingCalc;
+  var STORE = 'agent-pricing-calculator-v2';
+  var state, preset = 'credit-hold', view = 'vendor';
+
+  var sgdNum = new Intl.NumberFormat('en-SG', { maximumFractionDigits: 0 });
+  var sgd = { format: function (x) { return (x < 0 ? '−' : '') + 'S$' + sgdNum.format(Math.abs(x)); } };
+  var usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+  var int = new Intl.NumberFormat('en-SG', { maximumFractionDigits: 0 });
+  var dec1 = new Intl.NumberFormat('en-SG', { maximumFractionDigits: 1 });
+
+  function get(obj, path) { return path.split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, obj); }
+  function set(obj, path, val) {
+    var keys = path.split('.'), o = obj;
+    for (var i = 0; i < keys.length - 1; i++) o = o[keys[i]];
+    o[keys[keys.length - 1]] = val;
+  }
+  function clone(x) { return JSON.parse(JSON.stringify(x)); }
+
+  function load() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(STORE) || 'null');
+      if (saved && saved.state) { state = C.merge(C.fromPreset(saved.preset || 'credit-hold'), saved.state); preset = saved.preset || preset; view = saved.view || view; return; }
+    } catch (e) { /* storage unavailable: start from the preset */ }
+    state = clone(C.fromPreset(preset));
+  }
+  function save() {
+    try { localStorage.setItem(STORE, JSON.stringify({ preset: preset, view: view, state: state })); } catch (e) { /* ignore */ }
+  }
+
+  var fields = Array.prototype.slice.call(document.querySelectorAll('[data-path]'));
+  function fillForm() {
+    fields.forEach(function (el) {
+      var v = get(state, el.dataset.path);
+      if (el.type === 'checkbox') el.checked = !!v;
+      else el.value = v == null ? '' : v;
+    });
+    var p = C.PRESETS[preset];
+    document.getElementById('itemsLabel').textContent = 'Work items per month' + (p ? ' (' + p.itemLabel + ')' : '');
+    var base = preset.replace(/-flexible$/, ''), design = preset === base ? 'lean' : 'flexible';
+    document.querySelectorAll('[data-preset]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.preset === base)); });
+    document.querySelectorAll('button[data-design]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.design === design)); });
+    document.querySelectorAll('button[data-view]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.view === view)); });
+    document.getElementById('app').dataset.view = view;
+  }
+
+  fields.forEach(function (el) {
+    el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', function () {
+      var v;
+      if (el.type === 'checkbox') v = el.checked;
+      else if (el.type === 'number') v = el.value === '' ? 0 : Number(el.value);
+      else v = el.value;
+      set(state, el.dataset.path, v);
+      render(); save();
+    });
+  });
+  document.getElementById('form').addEventListener('submit', function (e) { e.preventDefault(); });
+  document.querySelectorAll('[data-preset]').forEach(function (b) {
+    b.addEventListener('click', function () { preset = b.dataset.preset + (/-flexible$/.test(preset) ? '-flexible' : ''); state = clone(C.fromPreset(preset)); fillForm(); render(); save(); });
+  });
+  document.querySelectorAll('button[data-design]').forEach(function (b) {
+    b.addEventListener('click', function () { preset = preset.replace(/-flexible$/, '') + (b.dataset.design === 'flexible' ? '-flexible' : ''); state = clone(C.fromPreset(preset)); fillForm(); render(); save(); });
+  });
+  document.querySelectorAll('button[data-view]').forEach(function (b) {
+    b.addEventListener('click', function () { view = b.dataset.view; fillForm(); render(); save(); });
+  });
+
+  // Tooltip for bar segments
+  var tip = document.createElement('div'); tip.className = 'tip'; tip.hidden = true; document.body.appendChild(tip);
+  function bindTip(el, text) {
+    el.addEventListener('pointermove', function (e) {
+      tip.textContent = text; tip.hidden = false;
+      var x = Math.min(e.clientX + 12, window.innerWidth - 250);
+      tip.style.left = x + 'px'; tip.style.top = (e.clientY + 14) + 'px';
+    });
+    el.addEventListener('pointerleave', function () { tip.hidden = true; });
+  }
+
+  function bar(track, parts, scale) {
+    track.innerHTML = '';
+    parts.forEach(function (p) {
+      if (p.v <= 0) return;
+      var s = document.createElement('div');
+      s.className = 'seg-bar' + (p.cls ? ' ' + p.cls : '');
+      if (p.color) s.style.background = p.color;
+      s.style.flex = '0 0 ' + (scale > 0 ? (p.v / scale * 100) : 0) + '%';
+      s.setAttribute('role', 'img');
+      s.setAttribute('aria-label', p.label + ': ' + sgd.format(p.v));
+      bindTip(s, p.tip || (p.label + ': ' + sgd.format(p.v) + ' per month'));
+      track.appendChild(s);
+    });
+  }
+
+  var lastResult;
+  function render() {
+    var r = lastResult = C.calculate(state);
+    var sub = r.subscription, ms = r.microsoft, cu = r.customer, v = r.vendor, cr = r.credits;
+
+    text('rCustomer', sgd.format(cu.monthlySgd));
+    var rg = r.range;
+    text('rCustomerSub', sgd.format(sub.monthlySgd) + ' you + ' + sgd.format(ms.bestSgd) + ' Microsoft · range ' + sgd.format(rg.low.customerMonthlySgd) + '–' + sgd.format(rg.high.customerMonthlySgd));
+    text('rValue', sgd.format(cu.valueMonthlySgd));
+    text('rValueSub', dec1.format(state.itemsPerMonth * state.value.minutesSavedPerItem / 60) + ' hours saved');
+    text('rRoi', cu.roiMultiple ? dec1.format(cu.roiMultiple) + '×' : '–');
+    // range table
+    var rt = document.getElementById('rangeTbl');
+    rt.innerHTML = '<thead><tr><th></th><th>Low</th><th>Expected</th><th>High</th></tr></thead>';
+    var rb = document.createElement('tbody');
+    [['Copilot credits / month', function (x) { return int.format(x.credits); }],
+     ['Microsoft cost / month', function (x) { return sgd.format(x.microsoftSgd); }],
+     ['Customer pays / month', function (x) { return sgd.format(x.customerMonthlySgd); }],
+     ['Value ÷ cost', function (x) { return dec1.format(x.roiMultiple) + '×'; }]].forEach(function (row, i) {
+      var tr = document.createElement('tr'); if (i === 2) tr.className = 'exp';
+      addTd(tr, row[0]); C.CASES.forEach(function (c) { addTd(tr, row[1](rg[c])); }); rb.appendChild(tr);
+    });
+    rt.appendChild(rb);
+    var measured = cr.source === 'measured';
+    text('srcChip', measured ? 'measured' : 'estimated');
+    text('rangeHint', measured
+      ? 'Based on your measured credits, ± ' + Math.round(state.range.measuredBand * 100) + '%.'
+      : 'Estimated from steps per item' + (state.model.type === 'standard' ? '' : ' and tokens per step') + '. The high case assumes ' + state.range.highStepFactor + '× the steps' + (state.model.type === 'standard' ? '' : ' and ' + state.range.highTokenFactor + '× the tokens per step') + '. Measure a validation run to narrow it.');
+    text('rRoiSub', (cu.netMonthlySgd >= 0 ? sgd.format(cu.netMonthlySgd) + ' net gain' : sgd.format(-cu.netMonthlySgd) + ' net cost') + ' per month');
+    text('rPayback', cu.paybackMonths == null ? 'Never' : dec1.format(cu.paybackMonths) + ' mo');
+    text('rPaybackSub', 'Setup ' + sgd.format(cu.setupFeeSgd) + ' · year 1 ' + sgd.format(cu.yearOneSgd));
+    text('rMargin', sgd.format(v.marginSgd));
+    text('rMarginSub', dec1.format(v.marginPct) + '% of subscription · cost ' + sgd.format(v.costSgd));
+    text('rArr', sgd.format(r.portfolio.arrSgd));
+    text('rArrSub', int.format(state.customersOnAgent) + ' customers · year-1 margin ' + sgd.format(r.portfolio.yearOneMarginSgd));
+
+    var scale = Math.max(rg.high.customerMonthlySgd, cu.valueMonthlySgd, 1);
+    bar(document.getElementById('costTrack'), [
+      { v: sub.monthlySgd, color: 'var(--fee)', label: 'Your subscription' },
+      { v: ms.bestSgd, color: 'var(--ms)', label: 'Microsoft Copilot credits (expected)' },
+      { v: rg.high.microsoftSgd - ms.bestSgd, cls: 'range', label: 'Extra Microsoft cost in the high case', tip: 'High case: Microsoft ' + sgd.format(rg.high.microsoftSgd) + ', total ' + sgd.format(rg.high.customerMonthlySgd) + ' per month' }
+    ], scale);
+    bar(document.getElementById('valueTrack'), [{ v: cu.valueMonthlySgd, color: 'var(--value)', label: 'Value of time saved' }], scale);
+    text('costVal', sgd.format(sub.monthlySgd) + ' subscription + ' + sgd.format(ms.bestSgd) + ' credits = ' + sgd.format(cu.monthlySgd) + ' (high case ' + sgd.format(rg.high.customerMonthlySgd) + ')');
+    text('valueVal', sgd.format(cu.valueMonthlySgd) + ' of staff time');
+
+    var c = sub.chosen, rows = [];
+    rows.push(['group', 'Subscription (' + c.tier + ')']);
+    rows.push(['', 'Base price', sgd.format(c.base)]);
+    if (c.overage) rows.push(['', 'Overage: ' + int.format(c.overItems) + ' items', sgd.format(c.overage)]);
+    if (c.entityAddOn) rows.push(['', 'Extra legal entities: ' + c.overEntities, sgd.format(c.entityAddOn)]);
+    if (sub.discountPct) rows.push(['', 'Annual prepay discount ' + sub.discountPct + '%', '−' + sgd.format(c.total - sub.monthlySgd)]);
+    rows.push(['total', 'Subscription per month', sgd.format(sub.monthlySgd)]);
+    rows.push(['group', 'Microsoft Copilot credits (customer pays Microsoft)']);
+    rows.push(['', (cr.source === 'measured' ? 'Measured per item: ' : 'Per item: ') + dec1.format(cr.perItem) + ' credits × ' + int.format(state.itemsPerMonth), int.format(cr.items)]);
+    rows.push(['', 'Scheduled runs: ' + dec1.format(cr.perScheduledRun) + ' × ' + int.format(state.scheduled.runsPerMonth), int.format(cr.scheduled)]);
+    rows.push(['', state.chat.usersHaveM365Copilot ? 'Chat (Microsoft 365 Copilot users: not charged)' : 'Chat', int.format(cr.chat)]);
+    rows.push(['', 'Credits per month', int.format(cr.total)]);
+    rows.push(['', 'Cheapest plan: ' + ms.bestPlan, usd.format(ms.bestUsd)]);
+    rows.push(['total', 'Credits per month in SGD (expected)', sgd.format(ms.bestSgd)]);
+    rows.push(['', 'Range (low – high)', sgd.format(rg.low.microsoftSgd) + ' – ' + sgd.format(rg.high.microsoftSgd)]);
+    if (view === 'vendor') {
+      rows.push(['group', 'Your cost (internal)']);
+      rows.push(['', dec1.format(v.hours) + ' hours × ' + sgd.format(state.vendor.hourlyCostSgd), sgd.format(v.hours * state.vendor.hourlyCostSgd)]);
+      rows.push(['', 'Licensing service hosting (your Azure bill ÷ agents)', sgd.format(state.vendor.azureShareSgd)]);
+      if (state.vendor.channelFeePct) rows.push(['', 'Channel fee ' + state.vendor.channelFeePct + '%', sgd.format(sub.monthlySgd * state.vendor.channelFeePct / 100)]);
+      rows.push(['total', 'Margin', sgd.format(v.marginSgd)]);
+    }
+    var tb = document.getElementById('breakdown'); tb.innerHTML = '';
+    rows.forEach(function (row) {
+      var tr = document.createElement('tr');
+      if (row[0]) tr.className = row[0];
+      if (row[0] === 'group') { var td = document.createElement('td'); td.colSpan = 2; td.textContent = row[1]; tr.appendChild(td); }
+      else { addTd(tr, row[1]); addTd(tr, row[2]); }
+      tb.appendChild(tr);
+    });
+
+    var cmp = document.getElementById('tierCmp');
+    cmp.innerHTML = '<thead><tr><th>Tier</th><th>Base</th><th>Overage</th><th>Entities</th><th>Per month</th></tr></thead>';
+    var body = document.createElement('tbody');
+    sub.quotes.forEach(function (q) {
+      var tr = document.createElement('tr');
+      if (q.tier === c.tier) tr.className = 'chosen';
+      var first = document.createElement('td'); first.textContent = q.tier;
+      if (q.tier === c.tier) { var chip = document.createElement('span'); chip.className = 'chip'; chip.textContent = 'quoted'; first.appendChild(chip); }
+      tr.appendChild(first);
+      addTd(tr, sgd.format(q.base)); addTd(tr, sgd.format(q.overage)); addTd(tr, sgd.format(q.entityAddOn)); addTd(tr, sgd.format(q.total));
+      body.appendChild(tr);
+    });
+    cmp.appendChild(body);
+
+    var ul = document.getElementById('warnings'); ul.innerHTML = '';
+    var warnings = r.warnings.filter(function (w) { return view === 'vendor' || !/margin/.test(w); });
+    if (!warnings.length) { var li0 = document.createElement('li'); li0.className = 'ok'; li0.style.background = 'transparent'; li0.style.borderLeft = '0'; li0.textContent = 'No issues: the price covers your cost and the agent saves more than it costs.'; ul.appendChild(li0); }
+    warnings.forEach(function (w) {
+      var li = document.createElement('li'); var b = document.createElement('b'); b.textContent = '⚠ Check'; var s = document.createElement('span'); s.textContent = w;
+      li.appendChild(b); li.appendChild(s); ul.appendChild(li);
+    });
+    document.getElementById('quoteText').hidden = true;
+    text('copied', '');
+  }
+  function text(id, t) { document.getElementById(id).textContent = t; }
+  function addTd(tr, t) { var td = document.createElement('td'); td.textContent = t; tr.appendChild(td); }
+
+  function quote() {
+    var r = lastResult, s = state, c = r.subscription.chosen, p = C.PRESETS[preset];
+    return [
+      (p ? p.label : 'Agent') + ' — indicative pricing (SGD, excl. GST)',
+      'Subscription: ' + c.tier + ' tier, ' + sgd.format(r.subscription.monthlySgd) + ' per month' + (r.subscription.discountPct ? ' (annual prepaid, ' + r.subscription.discountPct + '% discount)' : '') +
+        ' — includes ' + int.format(s.tiers[s.tiers.findIndex(function (t) { return t.name === c.tier; })].includedItems) + ' items per month' + (c.overItems ? '; ' + int.format(c.overItems) + ' extra items charged ' + sgd.format(c.overage) : '') + (c.entityAddOn ? '; ' + c.overEntities + ' extra legal entities ' + sgd.format(c.entityAddOn) : '') + '.',
+      'One-off setup: ' + sgd.format(r.customer.setupFeeSgd) + ' (' + s.setup.days + ' days).',
+      'Microsoft Copilot credits (paid to Microsoft): ' + (r.credits.source === 'measured' ? 'measured in validation, ' : 'estimated, ') + sgd.format(r.range.low.microsoftSgd) + '–' + sgd.format(r.range.high.microsoftSgd) + ' per month (expected about ' + sgd.format(r.microsoft.bestSgd) + ', ' + int.format(r.credits.total) + ' credits).',
+      'Estimated total per month: ' + sgd.format(r.range.low.customerMonthlySgd) + '–' + sgd.format(r.range.high.customerMonthlySgd) + ' (expected ' + sgd.format(r.customer.monthlySgd) + ').',
+      'Estimated value: ' + dec1.format(s.itemsPerMonth * s.value.minutesSavedPerItem / 60) + ' hours saved per month, worth ' + sgd.format(r.customer.valueMonthlySgd) + ' (' + dec1.format(r.customer.roiMultiple) + '× the monthly cost)' + (r.customer.paybackMonths != null ? '; setup paid back in about ' + dec1.format(r.customer.paybackMonths) + ' months.' : '.'),
+      (r.credits.source === 'measured' ? 'Microsoft usage is based on a measured validation run.' : 'Microsoft usage is an estimate; we measure it in a validation run before you commit, and you can cap it with a monthly limit per agent.') + ' D365 and Microsoft 365 licences are not included.'
+    ].join('\n');
+  }
+  document.getElementById('copyQuote').addEventListener('click', function () {
+    var t = quote(), box = document.getElementById('quoteText');
+    box.value = t;
+    function fallback() { box.hidden = false; box.focus(); box.select(); text('copied', 'Select all and copy the text below.'); }
+    try {
+      navigator.clipboard.writeText(t).then(function () { text('copied', 'Copied. Paste it into your proposal.'); }, fallback);
+    } catch (e) { fallback(); }
+  });
+
+  load(); fillForm(); render();
+})();
+</script>

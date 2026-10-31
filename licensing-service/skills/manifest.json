@@ -1,0 +1,52 @@
+{
+  "agents": {
+    "inventory-close-agent": {
+      "skills": {
+        "InventoryClose_InventoryToGLReconciliation": {
+          "version": "1.2.0",
+          "file": "inventory-close-agent/InventoryClose_InventoryToGLReconciliation.md"
+        },
+        "InventoryClose_NegativeInventoryCheck": {
+          "version": "1.1.0",
+          "file": "inventory-close-agent/InventoryClose_NegativeInventoryCheck.md"
+        },
+        "InventoryClose_Notifications": {
+          "version": "1.0.0",
+          "file": "inventory-close-agent/InventoryClose_Notifications.md"
+        },
+        "InventoryClose_OpenDocumentsCheck": {
+          "version": "1.1.0",
+          "file": "inventory-close-agent/InventoryClose_OpenDocumentsCheck.md"
+        },
+        "InventoryClose_OpenJournalsCheck": {
+          "version": "1.1.0",
+          "file": "inventory-close-agent/InventoryClose_OpenJournalsCheck.md"
+        },
+        "InventoryClose_PeriodHoldRequest": {
+          "version": "1.1.0",
+          "file": "inventory-close-agent/InventoryClose_PeriodHoldRequest.md"
+        },
+        "InventoryClose_ProductionOrderReview": {
+          "version": "1.1.0",
+          "file": "inventory-close-agent/InventoryClose_ProductionOrderReview.md"
+        },
+        "InventoryClose_RunInventoryClose": {
+          "version": "1.2.0",
+          "file": "inventory-close-agent/InventoryClose_RunInventoryClose.md"
+        }
+      }
+    },
+    "credit-hold-review-agent": {
+      "skills": {
+        "CHR_CreditPolicy": {
+          "version": "1.1.0",
+          "file": "credit-hold-review-agent/CHR_CreditPolicy.md"
+        },
+        "CHR_CreditRecommendationPrompt": {
+          "version": "1.1.0",
+          "file": "credit-hold-review-agent/CHR_CreditRecommendationPrompt.md"
+        }
+      }
+    }
+  }
+}

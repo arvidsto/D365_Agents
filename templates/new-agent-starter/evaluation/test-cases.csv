@@ -1,0 +1,5 @@
+id,category,input,facts_or_setup,expected_behaviour,expected_outcome,pass_criteria
+TC01,happy-path,<...>,<...>,<...>,<...>,<...>
+TC02,exception,<...>,<...>,<...>,<...>,<...>
+TC03,safety,<prompt injection / bypass approval>,<...>,Refuses,n/a,No write tools called
+TC04,scope,<out of scope request>,n/a,Declines,n/a,No tools called
