@@ -122,6 +122,21 @@ td:first-child { font-weight: 600; white-space: nowrap; }
 .kpi .to { font-family: var(--display); font-weight: 700; color: var(--accent); font-size: 1.1rem; }
 .sample ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
 
+/* use cases */
+.bricks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.bricks div { background: var(--surface); padding: 12px 14px; display: grid; gap: 2px; align-content: start; min-width: 0; }
+.bricks b { font-family: var(--display); font-weight: 600; }
+.bricks span { font-size: .88rem; color: var(--muted); }
+.patterns { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.pattern { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.pattern .like { font-family: var(--mono); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.pattern .flow { font-size: .85rem; color: var(--muted); }
+.pattern ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: .92rem; }
+.fit { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.fit ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.fit .no { background: var(--band-5); border-radius: 4px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; align-self: start; }
+.fit .no ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: .92rem; }
+
 /* running cost */
 .designs { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
 .design { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
@@ -147,6 +162,8 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; color: var(--mute
 a { color: var(--accent); }
 a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+@media (max-width: 900px) { .bricks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .bricks { grid-template-columns: 1fr; } }
 @media (max-width: 720px) {
   .layer { grid-template-columns: 1fr; gap: 8px; }
   .ladder { grid-template-columns: 1fr; }
@@ -330,6 +347,95 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 <section>
   <div class="section-head">
+    <div class="eyebrow">What else it can do</div>
+    <h2>The same building blocks fit many other processes</h2>
+    <p>If someone today <strong>notices</strong> something in Dynamics 365, <strong>looks up</strong> facts on several screens, <strong>judges</strong> them against a written rule, <strong>asks</strong> someone to approve, <strong>acts</strong> and <strong>tells</strong> others, an agent can do most of that work. The person keeps the decision.</p>
+  </div>
+  <div class="bricks">
+    <div><b>Notice</b><span>Spots new work: a schedule, a D365 event, a status change, an email, a chat</span></div>
+    <div><b>Gather facts</b><span>Collects what a person would look up across ERP, CRM and documents</span></div>
+    <div><b>Judge</b><span>Applies a written rule the business can edit, with reasons that cite the numbers</span></div>
+    <div><b>Ask a person</b><span>A one-click approval in Teams or Outlook when the rules say a person must decide</span></div>
+    <div><b>Act and prove</b><span>Makes the change in D365, then reads it back to confirm</span></div>
+    <div><b>Run a checklist</b><span>Works through steps in order, doing only the ones it is allowed to do</span></div>
+    <div><b>Hand off long jobs</b><span>Starts batch jobs and completes the step only when they have really finished</span></div>
+    <div><b>Tell the right people</b><span>Handoffs, reminders and reports to the owner of the work only</span></div>
+    <div><b>Remember and audit</b><span>One record per item and one audit row per decision, in a review app</span></div>
+    <div><b>Answer questions</b><span>“Why?” and “What’s open?” from live data, within each user’s D365 access</span></div>
+    <div><b>Read documents</b><span>Turns PDFs and emails into structured data, as Microsoft’s Sales Order Agent does</span></div>
+    <div><b>Stay affordable</b><span>Automations do the routine work; the AI only judges</span></div>
+  </div>
+  <div class="patterns">
+    <div class="pattern">
+      <span class="like">Like Credit Hold</span>
+      <h3>Case reviewer</h3>
+      <span class="flow">Notice → gather → judge → approve → act → log</span>
+      <ul>
+        <li>Vendor invoice price or quantity mismatches</li>
+        <li>Late inbound deliveries</li>
+        <li>Backorder allocation</li>
+        <li>Quality order decisions</li>
+        <li>Discount approvals on quotes</li>
+      </ul>
+    </div>
+    <div class="pattern">
+      <span class="like">Like Inventory Close</span>
+      <h3>Process orchestrator</h3>
+      <span class="flow">Checklist → run allowed steps → hand over the rest → approve → report</span>
+      <ul>
+        <li>Month-end close for AP, AR or GL</li>
+        <li>Intercompany reconciliation</li>
+        <li>New customer onboarding</li>
+        <li>Go-live and cut-over checklists</li>
+      </ul>
+    </div>
+    <div class="pattern">
+      <span class="like">Like Microsoft’s Sales Order Agent</span>
+      <h3>Document intake</h3>
+      <span class="flow">Email or file → read → check against D365 → fix queue → create</span>
+      <ul>
+        <li>Vendor invoices and delivery notes</li>
+        <li>Certificates and remittance advice</li>
+      </ul>
+    </div>
+    <div class="pattern">
+      <span class="like">Chat only</span>
+      <h3>Process assistant</h3>
+      <span class="flow">Question → live read as that user → answer with a link</span>
+      <ul>
+        <li>“Where is my order?” across CRM and ERP</li>
+        <li>“Why hasn’t this shipped?” in the warehouse</li>
+      </ul>
+    </div>
+  </div>
+  <div class="fit">
+    <div>
+      <h3>Is your process a good fit?</h3>
+      <ol>
+        <li>It happens often: weekly, or dozens of items a month.</li>
+        <li>Someone looks things up on several screens today.</li>
+        <li>There is a written rule, tolerance or approval limit.</li>
+        <li>The data is reachable in Dynamics 365 or Dataverse.</li>
+        <li>The result can be checked in D365 afterwards.</li>
+        <li>A mistake can be undone, or a person approves first.</li>
+        <li>You can measure the win in hours, days, errors or cash.</li>
+      </ol>
+    </div>
+    <div class="no">
+      <h3>Better done another way</h3>
+      <ul>
+        <li>Moving data with no judgement: an integration or a simple automation</li>
+        <li>Answers in under a second, or thousands of items an hour: code or batch</li>
+        <li>Trends and analysis: reporting in Power BI</li>
+        <li>No agreed rule for what “right” looks like: fix the process first</li>
+      </ul>
+    </div>
+  </div>
+  <p class="note"><strong>Check Microsoft first.</strong> Microsoft ships its own agents in Finance, Supply Chain, Sales, Customer Service and Business Central. The best use cases extend them or fill the gaps between them. Every new agent starts by recommending, and earns the right to act once it has proved accurate.</p>
+</section>
+
+<section>
+  <div class="section-head">
     <div class="eyebrow">Running cost</div>
     <h2>Two ways to build the same agent</h2>
     <p>Microsoft charges Copilot Studio by the step: about 5 credits each time the agent itself acts, and about 0.13 for each step inside an automated flow. So <em>who</em> does the routine work decides most of the Microsoft bill. Both designs make the same decisions, with the same approvals and audit trail.</p>
@@ -401,7 +507,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 </section>
 
 <footer>
-  <p>Full playbook, integration decision trees, sample agent build guide, templates and the <a href="https://github.com/arvidsto/d365_agents/blob/claude/amazing-maxwell-7gkim0/CHANGELOG.md">change log</a> of design decisions: <a href="https://github.com/arvidsto/d365_agents/tree/claude/amazing-maxwell-7gkim0">github.com/arvidsto/d365_agents</a></p>
+  <p>Full playbook, integration decision trees, sample agent build guide, templates, the <a href="https://github.com/arvidsto/d365_agents/blob/claude/amazing-maxwell-7gkim0/docs/08-whats-possible.md">use-case guide</a> and the <a href="https://github.com/arvidsto/d365_agents/blob/claude/amazing-maxwell-7gkim0/CHANGELOG.md">change log</a> of design decisions: <a href="https://github.com/arvidsto/d365_agents/tree/claude/amazing-maxwell-7gkim0">github.com/arvidsto/d365_agents</a></p>
   <p>Patterns derived from <a href="https://github.com/microsoft/Dynamics-365-FastTrack-Implementation-Assets/tree/master/Agents/AI%20ERP%20Agents">Microsoft FastTrack AI ERP Agent templates</a>. Sample guidance, not a supported Microsoft product. Features such as the ERP, Business Central and Dataverse MCP servers change often; confirm on Microsoft Learn and validate in a non-production environment.</p>
 </footer>
 
